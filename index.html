@@ -600,8 +600,27 @@ const LEVELS = [
     solution: OW_L10,
   },
   {
+    name: "オラクル10ビット版：鍵に印がつく瞬間",
+    label: "LEVEL 11", shortName: "10ビット印つけ",
+    desc: "レベル9のオラクルを10ビット鍵に拡大した実回路です（グローバーの反復に入る前の、印つけまで）。K9〜K0とDの11本に、H×10 → ⊕P → かき混ぜS → 暗号文Cとの一致判定（X挟み＋MCX）→ DにZ → 全逆計算、の約75ゲートが配線済み。「▶ 回路に通す」で一様な重ね合わせにオラクルを1回かけ、1024本の矢印のうち隠れた鍵の1本だけが左向き（赤）になることを確かめてください。「✓ 印を答え合わせ」でクリア判定。もう一度通すと印が消えることも試せます。",
+    qlink: "1024候補への「⊕P → かき混ぜ → 比較」が、重ね合わせのすべての枝で同時に走り、検算に合格した1本にだけ位相の印が落ちます——鍵を誰も計算していないのに。ただし全候補の矢印の長さは1/32（確率0.1%）のままで、測定してもこの印は見えません。見えない印を確率に変えるのが、次のレベルでつなぐ拡散です。なお、オラクルを偶数回通すと反転の反転で印は消えます。",
+    qubits: 11, labels: ["K9","K8","K7","K6","K5","K4","K3","K2","K1","K0","D"],
+    gates: [],
+    canvasW: 1880,
+    mode: "loop", oracleOnly: true,
+    preset: sim10OraclePreset,
+    goalHTML: "：オラクルを1回通し、<strong>隠れた鍵の1本だけが左向き（−）になった一覧表</strong>を作って「✓ 印を答え合わせ」で確認すること。長さは全候補同じまま＝測定では印が見えないことも確かめましょう。",
+    dialogue: [
+      { who:'rabbit', img:'rabbitThink', text:'ミニ暗号のオラクルを、10ビットでも見てみたいです。拡散をつなぐ前の、印がつくところまでを。' },
+      { who:'cat', img:'cat', text:'いいね。レベル9と同じオラクル——⊕P、かき混ぜS、Cとの一致判定、DにZ、逆計算——を10ビット幅で配線しておいたよ。約75ゲートだ。' },
+      { who:'rabbit', img:'rabbit', text:'1024本の矢印すべてで、検算が同時に走るんですね。' },
+      { who:'cat', img:'catThink', text:'そう。通してみて、左向きになった矢印を探してごらん。それが、誰も計算していない鍵の居場所だよ。長さは全部同じままだから、測定では見えないことも確かめられるね。' },
+    ],
+    solution: [],
+  },
+  {
     name: "10ビットの鍵探索：√Nを体感する",
-    label: "LEVEL 11", shortName: "10ビット探索",
+    label: "LEVEL 12", shortName: "10ビット探索",
     desc: "ミニ暗号を10ビット鍵に拡大した本物の回路です。K9〜K0の10本と補助ビットDに、H×10 → オラクル（⊕P → かき混ぜS → 暗号文Cとの一致判定 → DにZ → すべて逆計算）→ 拡散、の1反復分・約100ゲートが配線済みです。かき混ぜSは「上の桁から順に K_i ⊕= K_(i-1)、最後にK0を反転」。暗号文Cは隠し鍵から作られていますが、回路は公開データのPとCだけから組まれています。「▶ 回路に1反復通す」で状態を回路に通し、矢印グラフが育ったら（最適は約25反復）測定で鍵を言い当ててください（一致でクリア）。回しすぎるとどうなるかも試せます。",
     qlink: "10ビット（1024候補）では約25反復で確率99.9%——反復回数が√Nに比例することを体感できます。実機でも同じで、この回路を25回繰り返しかけます（ここでは同じ回路に状態を通し直しています）。ではAESの128ビットでは？　候補は2の128乗≈3.4×10³⁸通り。このゲームの方式（古典シミュレーション）で矢印の一覧表を持つには約10²⁷テラバイトが必要で、地球上の全ストレージでも遠く及びません——一覧表を「状態」としてそのまま持てる量子ビットの存在意義がここにあります。ただし量子実機でも反復は (π/4)√(2¹²⁸) ≈ 1.4×10¹⁹回。1マイクロ秒に1反復でも約46万年かかり、誤り訂正済みの論理量子ビットが数千個（物理量子ビットでは数百万個規模）必要です。つまりグローバーはAES-128を実質64ビット相当に弱めるものの実用的な攻撃には程遠く、AES-256などへの移行で備えられます。それでも回路の工程は、このゲームで組んだ「検算→DにZ→逆計算＋拡散」のまま変わりません。",
     qubits: 11, labels: ["K9","K8","K7","K6","K5","K4","K3","K2","K1","K0","D"],
@@ -1105,10 +1124,17 @@ function renderStatePanel(){
   if (lv.mode === 'loop'){
     document.getElementById('spInputNote').innerHTML =
       `手元のデータ：平文 P=${SIM10_P.toString(2).padStart(10,'0')}／暗号文 C=${sim10C.toString(2).padStart(10,'0')}<br>（回路はこの2つだけから組まれています。鍵はどこにも書かれていません）`;
-    let html = `<div id="loopStats">反復：<strong>${loopK}回</strong>　最適はおよそ25回（(π/4)√1024）</div>`;
+    const ob = lv.oracleOnly;
+    let html = `<div id="loopStats">${ob ? 'オラクル通過：' : '反復：'}<strong>${loopK}回</strong>${ob ? '（2回通すと印は消えます）' : '　最適はおよそ25回（(π/4)√1024）'}</div>`;
     html += '<canvas id="loopCanvas" width="1024" height="140" style="width:100%;background:#fff;border:1px solid #c9d2e4;border-radius:6px"></canvas>';
-    html += '<div class="sim-caption">1024個の鍵候補それぞれの矢印の長さ（横軸＝候補 0000000000〜1111111111）</div>';
-    html += `<div class="loop-btns">
+    html += '<div class="sim-caption">1024個の鍵候補それぞれの矢印（横軸＝候補 0000000000〜1111111111。中心線から上＝右向き＋（金色）、下＝左向き−（赤））</div>';
+    html += ob
+      ? `<div class="loop-btns">
+      <button class="btn btn-p" onclick="loopIterate()">▶ 回路に通す</button>
+      <button class="btn" onclick="loopCheckMark()">✓ 印を答え合わせ</button>
+      <button class="btn" onclick="loopResetKey()">鍵を変えてやり直す</button>
+    </div>`
+      : `<div class="loop-btns">
       <button class="btn btn-p" onclick="loopIterate()">▶ 回路に1反復通す</button>
       <button class="btn" onclick="loopTo25()">25反復まで回す</button>
       <button class="btn" onclick="loopResetKey()">鍵を変えてやり直す</button>
@@ -1452,7 +1478,7 @@ function renderDialogue(dialogue){
 }
 
 const CLEAR_DIALOGUE_1 = [
-  { who:'cat',    img:'cat',        text:'ここまでの11レベルを並べ直してみよう。' },
+  { who:'cat',    img:'cat',        text:'ここまでの12レベルを並べ直してみよう。' },
   { who:'rabbit', img:'rabbit',     text:'前半は検算でした。CNOTで⊕、トフォリで「かつ」、X挟みとCCCXで一致判定——条件の成否をDに書く回路たちです。' },
   { who:'cat',    img:'catThink',   text:'そう。後半はそれをオラクルに仕上げた。DにZで印をつけ、逆計算でDを返す。そして最後は、答えを知らない条件から組んで、グローバーで答えを引き出したね。まとめると——' },
 ];
@@ -1477,6 +1503,7 @@ function showClearScreen(){
     '＋拡散1反復 → 010と101が確率100%で出てくる<br>' +
     'ミニ暗号（⊕鍵→かき混ぜ） → 平文と暗号文だけから鍵を検算するオラクル<br>' +
     '＋拡散1反復 → 鍵が確率100%で一本釣り（4候補・答え1つ）<br>' +
+    '10ビット印つけ → 1024本のうち鍵の1本だけが左を向く（でも測定では見えない）<br>' +
     '10ビット×約25反復 → √Nの体感（1024候補が99.9%に。128ビットへの距離も）<br>' +
     '<strong>オラクル＝条件を回路にコンパイルしたもの。答えは条件が選ぶ</strong>' +
     '<hr style="margin:12px 0;border-color:rgba(0,0,0,.15)">' +
@@ -1503,13 +1530,12 @@ function sim10Enc(k){
   return t;
 }
 
-// 1反復分の回路（ゲート列）。qubit 0..9 = K9..K0（上がK9）、qubit 10 = D
-function sim10Preset(){
+// オラクルまでの回路（H×10＋印つけ）。qubit 0..9 = K9..K0（上がK9）、qubit 10 = D
+function sim10OraclePreset(){
   const g = [];
   const XP = c => { for (let j = 0; j <= 9; j++) if ((SIM10_P >> j) & 1) g.push({t:'X', q:[9 - j], c}); };
   const XC0 = c => { for (let j = 0; j <= 9; j++) if (!((sim10C >> j) & 1)) g.push({t:'X', q:[9 - j], c}); };
   const HALL = c => { for (let q = 0; q <= 9; q++) g.push({t:'H', q:[q], c}); };
-  const XALL = c => { for (let q = 0; q <= 9; q++) g.push({t:'X', q:[q], c}); };
   const KALL = [0,1,2,3,4,5,6,7,8,9];
   HALL(0);
   // 検算：⊕P → かき混ぜS
@@ -1525,9 +1551,48 @@ function sim10Preset(){
   g.push({t:'X', q:[9], c:12});
   for (let i = 1; i <= 9; i++) g.push({t:'CNOT', q:[10 - i, 9 - i], c: 13 + ((i - 1) % 2)});
   XP(15);
-  // 拡散（K1〜K10の10本のみ。Dには触れない）
-  HALL(16); XALL(17); g.push({t:'MCZ', q:KALL, c:18}); XALL(19); HALL(20);
   return g;
+}
+// 1反復分の回路（オラクル＋拡散）
+function sim10Preset(){
+  const g = sim10OraclePreset();
+  const KALL = [0,1,2,3,4,5,6,7,8,9];
+  for (let q = 0; q <= 9; q++) g.push({t:'H', q:[q], c:16});
+  for (let q = 0; q <= 9; q++) g.push({t:'X', q:[q], c:17});
+  g.push({t:'MCZ', q:KALL, c:18});
+  for (let q = 0; q <= 9; q++) g.push({t:'X', q:[q], c:19});
+  for (let q = 0; q <= 9; q++) g.push({t:'H', q:[q], c:20});
+  return g;
+}
+// 印つけレベルの答え合わせ：左向き（−）の矢印が隠し鍵の1本だけかを確認する
+function loopCheckMark(){
+  if (!loopState){
+    document.getElementById('measureResult').textContent = 'まず「▶ 回路に通す」でオラクルを通してから確認してください。';
+    return;
+  }
+  const negs = [];
+  let posCount = 0, residue = 0;
+  for (let k = 0; k < 1024; k++){
+    const a0 = loopState[k * 2];
+    residue += loopState[k * 2 + 1] ** 2;
+    if (a0 < -0.001) negs.push(k);
+    else if (a0 > 0.001) posCount++;
+  }
+  const el = document.getElementById('measureResult');
+  if (negs.length === 1 && negs[0] === sim10Key && residue < 0.001 && posCount === 1023){
+    el.innerHTML = `左向き（−）の矢印は <strong>|${sim10Key.toString(2).padStart(10,'0')}⟩</strong> の1本だけ——隠していた鍵と一致！` +
+      `<strong style="color:#1aa85a">オラクルが印をつけました 🎉</strong><br>ただし長さは全候補0.031のまま（確率は各0.1%）——測定ではこの印は見えません。`;
+    if (!cleared.includes(currentLevelIdx)){
+      cleared.push(currentLevelIdx);
+      localStorage.setItem('oracle_workshop_cleared', JSON.stringify(cleared));
+      buildLevelList();
+    }
+    showNextBtn();
+  } else if (negs.length === 0){
+    el.textContent = '反転した矢印がありません。オラクルを1回（奇数回）通した状態で確認してください（2回通すと反転の反転で印が消えます）。';
+  } else {
+    el.textContent = '想定と違う状態です。「やり直す」で組み直して、もう一度オラクルを1回だけ通してみてください。';
+  }
 }
 
 // 回路を解析（完成チェック・スレッド・実行順）。evalCircuitと同じ規則
@@ -1604,17 +1669,25 @@ function drawLoopCanvas(){
   if (!c) return;
   const ctx = c.getContext('2d');
   ctx.clearRect(0, 0, 1024, 140);
+  // 中心線から上＝右向き（＋）、下＝左向き（−）
+  const mid = 70;
   for (let k = 0; k < 1024; k++){
-    let a;
-    if (!loopState) a = k === 0 ? 1 : 0;   // まだ通していない：|0…0⟩
-    else a = Math.hypot(loopState[k * 2], loopState[k * 2 + 1]);
+    let a, re;
+    if (!loopState){ a = k === 0 ? 1 : 0; re = a; }   // まだ通していない：|0…0⟩
+    else { re = loopState[k * 2]; a = Math.hypot(re, loopState[k * 2 + 1]); }
     if (a > 0.001){
-      ctx.fillStyle = '#c69a1e';
-      ctx.fillRect(k, 138 - a * 132, Math.max(1, 1), Math.max(1, a * 132));
+      const h = Math.max(2, a * 64);
+      if (re < -0.001){
+        ctx.fillStyle = '#b0483a';
+        ctx.fillRect(k, mid, 2, h);
+      } else {
+        ctx.fillStyle = '#c69a1e';
+        ctx.fillRect(k, mid - h, 1, h);
+      }
     }
   }
   ctx.fillStyle = '#8a97b8';
-  ctx.fillRect(0, 138, 1024, 2);
+  ctx.fillRect(0, mid, 1024, 1);
 }
 
 // ====================== 起動 ======================
