@@ -204,6 +204,17 @@ a.head-btn{text-decoration:none;display:inline-flex;align-items:center;justify-c
 #measureBtn:hover{background:#e4ebfb}
 #measureResult{font-size:12px;font-weight:900;color:#1b2340;margin-top:8px;min-height:34px;line-height:1.6}
 .sp-incomplete{font-size:12px;font-weight:800;color:#8a6d1e;background:#fdf6e2;border:1px dashed #d9b84a;border-radius:8px;padding:10px 12px;line-height:1.7;margin:6px 0}
+/* ── 10ビット探索シミュレータ ── */
+#simWrap{flex:1;min-height:0;overflow-y:auto;padding:14px;background:var(--paper2);display:flex;flex-direction:column;gap:10px}
+#simScheme{background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px 14px;font-size:13px;font-weight:800;color:#1b2340;line-height:1.9}
+#simScheme .blk{display:inline-block;background:#e2f4f0;border:1px solid #1b6e63;border-radius:6px;padding:2px 9px;margin:0 3px;white-space:nowrap}
+#simScheme .blk.h{background:#ddeafc;border-color:#2e7dd1}
+#simScheme .blk.z{background:#ece1fb;border-color:#8a5ac4}
+.sim-caption{font-size:11px;color:var(--muted);font-weight:750;margin:0}
+#simCanvas{width:100%;height:auto;background:#fff;border:1px solid var(--line);border-radius:8px}
+#simStats{font-size:14px;font-weight:900;color:#1b2340}
+#simBtns{display:flex;gap:8px;flex-wrap:wrap}
+#simResult{font-size:14px;font-weight:900;color:#1b2340;line-height:1.8;min-height:30px}
 .tn{touch-action:none}
 .sp-note{font-size:10.5px;color:var(--muted);font-weight:700;margin-top:8px;line-height:1.6}
 
@@ -361,6 +372,20 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
             <div id="measureResult"></div>
             <div class="sp-note">表の各行は「測定したときに出力に現れる可能性のある0/1の並び（答え候補）」。確率＝矢印の長さの2乗。測定は何度でも試せますが、実物の量子コンピュータでは測定すると状態は壊れ、答えは1回につき1つしか読み出せません。</div>
           </aside>
+        </div>
+        <!-- 10ビット探索シミュレータ（mode:'sim' のレベルで playRow の代わりに表示） -->
+        <div id="simWrap" style="display:none">
+          <div id="simScheme"></div>
+          <p class="sim-caption">1024個の鍵候補それぞれの矢印の長さ（横軸＝候補 0000000000〜1111111111、縦軸＝長さ。長さの2乗が確率）</p>
+          <canvas id="simCanvas" width="1024" height="230"></canvas>
+          <div id="simStats"></div>
+          <div id="simBtns">
+            <button id="simStep1" class="btn">＋1反復（オラクル→拡散）</button>
+            <button id="simAuto" class="btn btn-p">25反復まで自動で回す</button>
+            <button id="simMeasureBtn" class="btn">🎲 測定する</button>
+            <button id="simResetBtn" class="btn">鍵を変えてやり直す</button>
+          </div>
+          <div id="simResult"></div>
         </div>
       </div>
 
@@ -591,6 +616,23 @@ const LEVELS = [
     ],
     solution: OW_L10,
   },
+  {
+    name: "10ビットの鍵探索：√Nを体感する",
+    label: "LEVEL 11", shortName: "10ビット探索",
+    desc: "ミニ暗号を10ビット鍵に拡大します（⊕鍵→かき混ぜ、を10ビット幅にしただけ。鍵はランダムに隠されています）。回路の工程はレベル9〜10と完全に同じですが、候補が1024通り・必要な反復が約25回になるため、ここでは手配線ではなく「オラクル→拡散」を1反復ずつボタンで回します。矢印のグラフを見ながら25回前後まで育てて、測定で鍵を言い当ててください（一致した時点でクリア）。回しすぎるとどうなるかも試せます。",
+    qlink: "10ビット（1024候補）では約25反復で確率99.9%——反復回数が√Nに比例することを体感できます。ではAESの128ビットでは？　候補は2の128乗≈3.4×10³⁸通り。このゲームの方式（古典シミュレーション）で矢印の一覧表を持つには約10²⁷テラバイトが必要で、地球上の全ストレージでも遠く及びません——一覧表を「状態」としてそのまま持てる量子ビットの存在意義がここにあります。ただし量子実機でも反復は (π/4)√(2¹²⁸) ≈ 1.4×10¹⁹回。1マイクロ秒に1反復でも約46万年かかり、誤り訂正済みの論理量子ビットが数千個（物理量子ビットでは数百万個規模）必要です。つまりグローバーはAES-128を実質64ビット相当に弱めるものの実用的な攻撃には程遠く、AES-256などへの移行で備えられます。それでも工程そのものは、このゲームで組んだ「検算→DにZ→逆計算＋拡散」のまま変わりません。",
+    qubits: 10, labels: [], gates: [],
+    mode: "sim",
+    goalHTML: "：反復を進めて鍵の矢印を育て、<strong>測定で隠された鍵を言い当てる</strong>こと（一致した時点でクリア）。最適な反復回数はおよそ (π/4)√1024 ≈ 25回です。",
+    dialogue: [
+      { who:'cat', img:'cat', text:'仕上げに、ミニ暗号を鍵10ビットに広げてみよう。暗号化は同じ「⊕鍵→かき混ぜ」を10ビット幅にしただけ。オラクルの工程も、検算→DにZ→逆計算でまったく同じだよ。' },
+      { who:'rabbit', img:'rabbitThink', text:'候補は2の10乗で1024通り……答えが1つだと、1反復では育ちきりませんよね。何回まわせばいいんでしょうか。' },
+      { who:'cat', img:'catThink', text:'最適はおよそ (π/4)√N 回。√1024＝32だから、25回前後だね。1024本の配線を手で組むのは大変だから、ここでは「オラクル→拡散」をひとまとまりの工程として回そう。矢印が育っていくようすを見ながら、25回あたりで測定してごらん。' },
+      { who:'rabbit', img:'rabbit', text:'まわしすぎたら、どうなるんですか？' },
+      { who:'cat', img:'cat', text:'折り返しの回しすぎで、今度は逆に縮んでいく。それも自分の目で確かめてごらん。' },
+    ],
+    solution: [],
+  },
 ];
 
 // ====================== 状態 ======================
@@ -623,8 +665,19 @@ function startGame(){
   document.getElementById('game-screen').style.display = 'flex';
   window.scrollTo(0, 0);
   document.getElementById('app-shell').classList.add('game-mode');
-  buildGateBar();
-  resetCircuit();
+  const sim = LV().mode === 'sim';
+  document.getElementById('playRow').style.display = sim ? 'none' : 'flex';
+  document.getElementById('simWrap').style.display = sim ? 'flex' : 'none';
+  document.getElementById('gate-bar').style.display = sim ? 'none' : 'flex';
+  document.getElementById('runBtn').style.display = sim ? 'none' : '';
+  document.getElementById('clearBtn').style.display = sim ? 'none' : '';
+  document.getElementById('answerBtn').style.display = sim ? 'none' : '';
+  if (sim){
+    simReset();
+  } else {
+    buildGateBar();
+    resetCircuit();
+  }
 }
 
 function loadLevel(idx){
@@ -1358,7 +1411,7 @@ function renderDialogue(dialogue){
 }
 
 const CLEAR_DIALOGUE_1 = [
-  { who:'cat',    img:'cat',        text:'ここまでの10レベルを並べ直してみよう。' },
+  { who:'cat',    img:'cat',        text:'ここまでの11レベルを並べ直してみよう。' },
   { who:'rabbit', img:'rabbit',     text:'前半は検算でした。CNOTで⊕、トフォリで「かつ」、X挟みとCCCXで一致判定——条件の成否をDに書く回路たちです。' },
   { who:'cat',    img:'catThink',   text:'そう。後半はそれをオラクルに仕上げた。DにZで印をつけ、逆計算でDを返す。そして最後は、答えを知らない条件から組んで、グローバーで答えを引き出したね。まとめると——' },
 ];
@@ -1383,6 +1436,7 @@ function showClearScreen(){
     '＋拡散1反復 → 010と101が確率100%で出てくる<br>' +
     'ミニ暗号（⊕鍵→かき混ぜ） → 平文と暗号文だけから鍵を検算するオラクル<br>' +
     '＋拡散1反復 → 鍵が確率100%で一本釣り（4候補・答え1つ）<br>' +
+    '10ビット×約25反復 → √Nの体感（1024候補が99.9%に。128ビットへの距離も）<br>' +
     '<strong>オラクル＝条件を回路にコンパイルしたもの。答えは条件が選ぶ</strong>' +
     '<hr style="margin:12px 0;border-color:rgba(0,0,0,.15)">' +
     '<small>実際のAES鍵探索のオラクルも、暗号化の全手順（数万ゲート規模）を同じ3工程' +
@@ -1390,6 +1444,70 @@ function showClearScreen(){
   document.getElementById('clear-dialog-2').innerHTML = renderDialogue(CLEAR_DIALOGUE_2);
   document.getElementById('clear-screen').style.display = '';
 }
+
+// ====================== 10ビット探索シミュレータ ======================
+// M=1のグローバーは2次元部分空間の回転で厳密に書ける：
+// k反復後、鍵の振幅 = sin((2k+1)θ)、他は cos((2k+1)θ)/√(N−1)、θ = asin(1/√N)
+const SIM_N = 1024;
+const SIM_TH = Math.asin(1 / Math.sqrt(SIM_N));
+let simK = 0, simKey = 0, simTimer = null;
+
+function simKeyAmp(){ return Math.sin((2 * simK + 1) * SIM_TH); }
+function simOtherAmp(){ return Math.cos((2 * simK + 1) * SIM_TH) / Math.sqrt(SIM_N - 1); }
+function simBits(i){ return i.toString(2).padStart(10, '0'); }
+
+function simReset(){
+  simK = 0;
+  simKey = Math.floor(Math.random() * SIM_N);
+  clearInterval(simTimer); simTimer = null;
+  document.getElementById('simResult').innerHTML = '';
+  document.getElementById('simScheme').innerHTML =
+    '回路の工程（レベル9〜10と同じ。幅が10ビットになっただけ）：<br>' +
+    '<span class="blk h">H×10</span> →（ <span class="blk">オラクル：検算（⊕鍵→かき混ぜ→一致判定）</span> → ' +
+    '<span class="blk z">DにZ</span> → <span class="blk">逆計算</span> → <span class="blk h">拡散</span> ）を繰り返し → 測定';
+  simRender();
+}
+function simRender(){
+  const c = document.getElementById('simCanvas'), ctx = c.getContext('2d');
+  ctx.clearRect(0, 0, 1024, 230);
+  const ak = Math.abs(simKeyAmp()), ao = Math.abs(simOtherAmp());
+  ctx.fillStyle = '#8a97b8';
+  ctx.fillRect(0, 228 - ao * 220, 1024, Math.max(1, ao * 220));
+  ctx.fillStyle = '#d4a017';
+  ctx.fillRect(simKey, 228 - ak * 220, 2, Math.max(1, ak * 220));
+  const pk = simKeyAmp() ** 2;
+  const pmax = Math.max(pk, simOtherAmp() ** 2);
+  document.getElementById('simStats').innerHTML =
+    `反復：<strong>${simK}回</strong>　／　いちばん長い矢印の確率：<strong>${(pmax * 100).toFixed(1)}%</strong>` +
+    `　／　最適はおよそ25回（(π/4)√1024 ≈ 25.1）`;
+}
+function simStepOnce(){ simK++; simRender(); }
+document.getElementById('simStep1').addEventListener('click', () => { simStepOnce(); });
+document.getElementById('simAuto').addEventListener('click', () => {
+  if (simTimer){ clearInterval(simTimer); simTimer = null; return; }
+  simTimer = setInterval(() => {
+    if (simK >= 25){ clearInterval(simTimer); simTimer = null; return; }
+    simStepOnce();
+  }, 130);
+});
+document.getElementById('simResetBtn').addEventListener('click', () => { simReset(); });
+document.getElementById('simMeasureBtn').addEventListener('click', () => {
+  const pk = simKeyAmp() ** 2;
+  let hit;
+  if (Math.random() < pk) hit = simKey;
+  else { hit = Math.floor(Math.random() * (SIM_N - 1)); if (hit >= simKey) hit++; }
+  const ok = hit === simKey;
+  document.getElementById('simResult').innerHTML =
+    `測定結果：<strong>|${simBits(hit)}⟩</strong>（このときの鍵の確率 ${(pk*100).toFixed(1)}%）<br>` +
+    (ok ? `隠していた鍵は |${simBits(simKey)}⟩ —— <strong style="color:#1aa85a">一致！鍵を言い当てました 🎉</strong>`
+        : `隠していた鍵は |${simBits(simKey)}⟩ —— はずれ。反復を進めて（または回しすぎを戻して）もう一度どうぞ。`);
+  if (ok && !cleared.includes(currentLevelIdx)){
+    cleared.push(currentLevelIdx);
+    localStorage.setItem('oracle_workshop_cleared', JSON.stringify(cleared));
+    buildLevelList();
+  }
+  if (ok) showNextBtn();
+});
 
 // ====================== 起動 ======================
 // 前回開いていたレベルを復元する（リロードでレベル1に戻らないように）
