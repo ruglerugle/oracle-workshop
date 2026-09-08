@@ -23,7 +23,7 @@
   "url": "https://ruglerugle.github.io/oracle-workshop/",
   "inLanguage": "ja",
   "learningResourceType": "learning activity",
-  "teaches": "グローバーのオラクルの構成（判定ビット・検算回路・多重制御X・位相の印つけ・補助ビットと逆計算・複数解の探索）",
+  "teaches": "グローバーのオラクルの構成（判定ビット・検算回路・多重制御X・位相の印つけ・補助ビットと逆計算・複数解の探索・ミニ暗号の鍵検算）",
   "isAccessibleForFree": true,
   "author": { "@type": "Person", "name": "ruglerugle" }
 }
@@ -380,6 +380,7 @@ const GATESPEC = {
   CCZ:  { pins:3, btn:'CCZ ●●●', w:86, fill:'#ece1fb', stroke:'#8a5ac4', short:'CCZ', pinMarks:['●','●','●'] },
   ORACLE: { pins:3, btn:'？オラクル（封印）', w:86, fill:'#3a3f52', stroke:'#191d2c', short:'？', dark:true },
   CCCX: { pins:4, btn:'CCCX ●●●—⊕', w:86, fill:'#e2f4f0', stroke:'#1b6e63', short:'CCCX', pinMarks:['●','●','●','⊕'] },
+  CZ: { pins:2, btn:'CZ ●●', w:86, fill:'#ece1fb', stroke:'#8a5ac4', short:'CZ', pinMarks:['●','●'] },
 };
 
 // ====================== オラクル工房の部品 ======================
@@ -404,6 +405,19 @@ const OW_UNCHECK_ALT = c => [ {t:'CCX',q:[0,1,3],c:c}, {t:'CNOT',q:[2,1],c:c+1},
 const OW_L7 = [ ...OW_H3(0), ...OW_CHECK_ALT(1), {t:'Z',q:[3],c:4}, ...OW_UNCHECK_ALT(5) ];
 const OW_DIFF3 = c => [ ...OW_H3(c), ...OW_X3(c+1), {t:'CCZ',q:[0,1,2],c:c+2}, ...OW_X3(c+3), ...OW_H3(c+4) ];
 const OW_L8 = [ ...OW_L7, ...OW_DIFF3(8) ];
+// ミニ暗号（L9-10）: 鍵K=2桁（K1,K0）、Enc(P,K)=S(K⊕P)、S=2進で+1（CNOT(K0→K1)→X(K0)）。
+// 手元のデータは P=10・C=01（合格する鍵は S⁻¹(C)⊕P だが、回路の構成には使わない）
+const OW_H2 = c => [ {t:'H',q:[0],c}, {t:'H',q:[1],c} ];
+const OW_ENC = c => [ {t:'X',q:[0],c:c}, {t:'CNOT',q:[1,0],c:c+1}, {t:'X',q:[1],c:c+2} ];   // ⊕P → かき混ぜS
+const OW_UNENC = c => [ {t:'X',q:[1],c:c}, {t:'CNOT',q:[1,0],c:c+1}, {t:'X',q:[0],c:c+2} ]; // その逆走
+const OW_CMP = c => [ {t:'X',q:[0],c:c}, {t:'CCX',q:[0,1,2],c:c+1}, {t:'X',q:[0],c:c+2} ];  // C=01 との一致をDへ
+const OW_L9 = [ ...OW_H2(0), ...OW_ENC(1), ...OW_CMP(4), {t:'Z',q:[2],c:7}, ...OW_CMP(8), ...OW_UNENC(11) ];
+const OW_DIFF2 = c => [ ...OW_H2(c), {t:'X',q:[0],c:c+1}, {t:'X',q:[1],c:c+1}, {t:'CZ',q:[0,1],c:c+2}, {t:'X',q:[0],c:c+3}, {t:'X',q:[1],c:c+3}, ...OW_H2(c+4) ];
+const OW_L10 = [ ...OW_L9, ...OW_DIFF2(14) ];
+// L9: 検算オラクル通過後（鍵の枝だけ反転。鍵がどれかは回路が決める）
+const T9 = [0.5,0, 0.5,0, -0.5,0, 0.5,0];
+// L10: グローバー1反復後（4候補・答え1つは確率100%。この組み方では符号は反転）
+const T10 = [0,0, 0,0, -1,0, 0,0];
 
 // ====================== レベル定義 ======================
 // qubits: 量子ビット数（上の行が q0）。基底状態の番号は q0 を最上位ビットとする。
@@ -541,6 +555,41 @@ const LEVELS = [
       { who:'cat', img:'catThink', text:'それがグローバーの設計思想だよ。「確かめるのは簡単、見つけるのは大変」——そういう問題のための道具なんだ。' },
     ],
     solution: OW_L8,
+  },
+  {
+    name: "ミニ暗号：平文と暗号文から鍵を検算する",
+    label: "LEVEL 9", shortName: "ミニ暗号",
+    desc: "おもちゃの暗号を定義します：暗号文 C ＝「平文Pに鍵K（2桁）を⊕して、かき混ぜS（2進で＋1：CNOT(K0→K1)→X(K0)）を1回かけたもの」。手元にあるのは平文 P=10 と暗号文 C=01 だけで、鍵は知りません。検算「候補Kで暗号化するとC=01になるか」をKレジスタ上で直接計算するオラクルを組んでください。手順：H×2（K1・K0）→ ⊕P（Pの1の桁＝K1にX）→ かき混ぜS（CNOT(K0→K1)→X(K0)）→ 一致判定（Cの0の桁＝K1をXで挟み、トフォリ(K1,K0→D)）→ DにZ → 一致判定と暗号化を逆順にすべて戻す。",
+    qlink: "本物の暗号（AESなど）も「鍵を⊕する → かき混ぜる（S-box）」の繰り返しでできており、このミニ暗号はその1往復だけを取り出したものです。検算オラクルの作り方は同じ：①暗号化の手順を可逆論理で書く ②既知の暗号文とX挟み＋多重制御で比較してDへ ③DにZ ④全部逆走。材料は公開の暗号化手順と手元のP・Cだけで、鍵はどこにも使っていません。AESでは鍵が2の128乗通り・回路が数万ゲートになるだけで、工程はこのレベルと同一です。",
+    qubits: 3, labels: ["K1","K0","D"], gates: ["H","X","Z","CNOT","CCX"],
+    canvasW: 1680,
+    mode: "state", target: T9,
+    goalHTML: "：4通りの鍵候補に0.5ずつの矢印を立てたうえで、<strong>検算に合格する鍵の枝だけ</strong>矢印が反転した一覧表を作ること（Dはすべての枝で0に戻す）。どの鍵に印がつくかは、組んでから一覧表で確かめてください。「▶ 検証する」で内部の目標表と照合します。",
+    dialogue: [
+      { who:'rabbit', img:'rabbitThink', text:'「隣どうしが違う」のような条件だけでなく、本物の暗号みたいに「平文と暗号文から鍵を探す」オラクルも組めるんでしょうか。' },
+      { who:'cat', img:'cat', text:'組めるよ。おもちゃの暗号をひとつ定義しよう。鍵Kは2桁。暗号化は「平文Pに鍵を⊕して、かき混ぜSを1回かける」——Sは2進で＋1する回路だ。手元には平文P=10と暗号文C=01がある。鍵は、私たちも知らないことにしよう。' },
+      { who:'rabbit', img:'rabbit', text:'検算は「候補KをPに⊕して、Sをかけて、C=01と比べる」……比べた結果をDに書けばいいんですね。作業用のレジスタがないので、レベル7と同じように候補K自身を書き換えて、あとで逆計算で返します。' },
+      { who:'cat', img:'catThink', text:'そう。⊕Pは「Pの1の桁にX」、Sは「CNOTとX」、一致判定は「Cの0の桁をXで挟んでトフォリ」。全部、いままでの部品だね。組み上がったら、どの鍵に印がつくか一覧表で見てごらん——私たちは一度も鍵を計算していないのにね。' },
+    ],
+    solution: OW_L9,
+  },
+  {
+    name: "鍵の一本釣り：4候補・1反復・100%",
+    label: "LEVEL 10", shortName: "鍵の一本釣り",
+    desc: "ミニ暗号のオラクルまでは配置済みです。その後ろに、Kレジスタへの拡散 H×2 → X×2 → CZ → X×2 → H×2 をつないでください（CZは制御Z：両方が1のときだけ矢印を反転する2量子ビット版。Dには何もしません）。4候補・答え1つのこの問題では、1反復で確率100%になります。完成したら測定で鍵を取り出しましょう。",
+    qlink: "N=4・M=1は、1反復でちょうど確率100%になる特別な場合です（一般には (π/4)√N 回で100%弱）。古典なら平均2〜3回は暗号化を試すところを、量子は重ね合わせへの検算1回＋拡散で言い当てます。取り出した鍵が本物かどうかは、手元の平文を暗号化してみれば古典計算で確かめられます——「見つけるのは大変、確かめるのは簡単」という、グローバーが得意な問題の形そのものです。",
+    qubits: 3, labels: ["K1","K0","D"], gates: ["H","X","Z","CNOT","CCX","CZ"],
+    canvasW: 2180,
+    mode: "state", target: T10,
+    goalHTML: "：グローバー1反復で、<strong>検算に合格する鍵</strong>の確率を100%にすること。測定すると毎回同じ鍵が出るはずです。「▶ 検証する」で答え合わせをします。",
+    preset: OW_L9,
+    dialogue: [
+      { who:'cat', img:'cat', text:'仕上げだよ。オラクルの後ろに、Kレジスタへの拡散——H×2 → X×2 → CZ → X×2 → H×2。CZは制御Zで、両方が1のときだけ矢印を反転する2量子ビット版だ。' },
+      { who:'rabbit', img:'rabbitThink', text:'候補は4つで、検算に合格する鍵は1つのはず……このときは何反復必要なんでしょうか。' },
+      { who:'cat', img:'cat', text:'4候補・答え1つは特別で、<strong>1反復でちょうど100%</strong>になるんだ。組んで、測定してごらん。毎回同じ鍵が出るはずだよ。' },
+      { who:'rabbit', img:'rabbit', text:'出てきた鍵で本当にP=10がC=01になるか、手で暗号化し直せば答え合わせもできますね。平文と暗号文だけから、鍵が一本釣りできました。' },
+    ],
+    solution: OW_L10,
   },
 ];
 
@@ -889,6 +938,9 @@ function applyGate(s, type, qs, n){
   } else if (type === 'CCZ'){
     const m1 = maskOf(qs[0], n), m2 = maskOf(qs[1], n), m3 = maskOf(qs[2], n);
     for (let i = 0; i < N; i++) if ((i & m1) && (i & m2) && (i & m3)) s[i] = -s[i];
+  } else if (type === 'CZ'){
+    const m1 = maskOf(qs[0], n), m2 = maskOf(qs[1], n);
+    for (let i = 0; i < N; i++) if ((i & m1) && (i & m2)) s[i] = -s[i];
   } else if (type === 'CCCX'){
     const m1 = maskOf(qs[0], n), m2 = maskOf(qs[1], n), m3 = maskOf(qs[2], n), mt = maskOf(qs[3], n);
     for (let i = 0; i < N; i++) if ((i & m1) && (i & m2) && (i & m3) && !(i & mt)){ const j = i | mt, t = s[i]; s[i] = s[j]; s[j] = t; }
@@ -1306,7 +1358,7 @@ function renderDialogue(dialogue){
 }
 
 const CLEAR_DIALOGUE_1 = [
-  { who:'cat',    img:'cat',        text:'ここまでの8レベルを並べ直してみよう。' },
+  { who:'cat',    img:'cat',        text:'ここまでの10レベルを並べ直してみよう。' },
   { who:'rabbit', img:'rabbit',     text:'前半は検算でした。CNOTで⊕、トフォリで「かつ」、X挟みとCCCXで一致判定——条件の成否をDに書く回路たちです。' },
   { who:'cat',    img:'catThink',   text:'そう。後半はそれをオラクルに仕上げた。DにZで印をつけ、逆計算でDを返す。そして最後は、答えを知らない条件から組んで、グローバーで答えを引き出したね。まとめると——' },
 ];
@@ -1329,6 +1381,8 @@ function showClearScreen(){
     '逆計算 → Dを借りて、使って、返す＝オラクル完成<br>' +
     '条件「隣り合う桁が違う」 → 答えを知らずに組んだオラクル<br>' +
     '＋拡散1反復 → 010と101が確率100%で出てくる<br>' +
+    'ミニ暗号（⊕鍵→かき混ぜ） → 平文と暗号文だけから鍵を検算するオラクル<br>' +
+    '＋拡散1反復 → 鍵が確率100%で一本釣り（4候補・答え1つ）<br>' +
     '<strong>オラクル＝条件を回路にコンパイルしたもの。答えは条件が選ぶ</strong>' +
     '<hr style="margin:12px 0;border-color:rgba(0,0,0,.15)">' +
     '<small>実際のAES鍵探索のオラクルも、暗号化の全手順（数万ゲート規模）を同じ3工程' +
