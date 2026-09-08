@@ -204,17 +204,11 @@ a.head-btn{text-decoration:none;display:inline-flex;align-items:center;justify-c
 #measureBtn:hover{background:#e4ebfb}
 #measureResult{font-size:12px;font-weight:900;color:#1b2340;margin-top:8px;min-height:34px;line-height:1.6}
 .sp-incomplete{font-size:12px;font-weight:800;color:#8a6d1e;background:#fdf6e2;border:1px dashed #d9b84a;border-radius:8px;padding:10px 12px;line-height:1.7;margin:6px 0}
-/* ── 10ビット探索シミュレータ ── */
-#simWrap{flex:1;min-height:0;overflow-y:auto;padding:14px;background:var(--paper2);display:flex;flex-direction:column;gap:10px}
-#simScheme{background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px 14px;font-size:13px;font-weight:800;color:#1b2340;line-height:1.9}
-#simScheme .blk{display:inline-block;background:#e2f4f0;border:1px solid #1b6e63;border-radius:6px;padding:2px 9px;margin:0 3px;white-space:nowrap}
-#simScheme .blk.h{background:#ddeafc;border-color:#2e7dd1}
-#simScheme .blk.z{background:#ece1fb;border-color:#8a5ac4}
-.sim-caption{font-size:11px;color:var(--muted);font-weight:750;margin:0}
-#simCanvas{width:100%;height:auto;background:#fff;border:1px solid var(--line);border-radius:8px}
-#simStats{font-size:14px;font-weight:900;color:#1b2340}
-#simBtns{display:flex;gap:8px;flex-wrap:wrap}
-#simResult{font-size:14px;font-weight:900;color:#1b2340;line-height:1.8;min-height:30px}
+/* ── 10ビット探索（反復パネル） ── */
+.sim-caption{font-size:10.5px;color:var(--muted);font-weight:750;margin:4px 0 0}
+#loopStats{font-size:13px;font-weight:900;color:#1b2340;margin:2px 0 6px}
+.loop-btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.loop-btns .btn{padding:.45rem .7rem;font-size:12px}
 .tn{touch-action:none}
 .sp-note{font-size:10.5px;color:var(--muted);font-weight:700;margin-top:8px;line-height:1.6}
 
@@ -373,20 +367,6 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
             <div class="sp-note">表の各行は「測定したときに出力に現れる可能性のある0/1の並び（答え候補）」。確率＝矢印の長さの2乗。測定は何度でも試せますが、実物の量子コンピュータでは測定すると状態は壊れ、答えは1回につき1つしか読み出せません。</div>
           </aside>
         </div>
-        <!-- 10ビット探索シミュレータ（mode:'sim' のレベルで playRow の代わりに表示） -->
-        <div id="simWrap" style="display:none">
-          <div id="simScheme"></div>
-          <p class="sim-caption">1024個の鍵候補それぞれの矢印の長さ（横軸＝候補 0000000000〜1111111111、縦軸＝長さ。長さの2乗が確率）</p>
-          <canvas id="simCanvas" width="1024" height="230"></canvas>
-          <div id="simStats"></div>
-          <div id="simBtns">
-            <button id="simStep1" class="btn">＋1反復（オラクル→拡散）</button>
-            <button id="simAuto" class="btn btn-p">25反復まで自動で回す</button>
-            <button id="simMeasureBtn" class="btn">🎲 測定する</button>
-            <button id="simResetBtn" class="btn">鍵を変えてやり直す</button>
-          </div>
-          <div id="simResult"></div>
-        </div>
       </div>
 
     </main>
@@ -406,6 +386,9 @@ const GATESPEC = {
   ORACLE: { pins:3, btn:'？オラクル（封印）', w:86, fill:'#3a3f52', stroke:'#191d2c', short:'？', dark:true },
   CCCX: { pins:4, btn:'CCCX ●●●—⊕', w:86, fill:'#e2f4f0', stroke:'#1b6e63', short:'CCCX', pinMarks:['●','●','●','⊕'] },
   CZ: { pins:2, btn:'CZ ●●', w:86, fill:'#ece1fb', stroke:'#8a5ac4', short:'CZ', pinMarks:['●','●'] },
+  // 10ビット探索用の多重制御ゲート（制御10個）
+  MCX: { pins:11, btn:'MCX', w:86, fill:'#e2f4f0', stroke:'#1b6e63', short:'MCX', pinMarks:['●','●','●','●','●','●','●','●','●','●','⊕'] },
+  MCZ: { pins:10, btn:'MCZ', w:86, fill:'#ece1fb', stroke:'#8a5ac4', short:'MCZ', pinMarks:['●','●','●','●','●','●','●','●','●','●'] },
 };
 
 // ====================== オラクル工房の部品 ======================
@@ -619,15 +602,18 @@ const LEVELS = [
   {
     name: "10ビットの鍵探索：√Nを体感する",
     label: "LEVEL 11", shortName: "10ビット探索",
-    desc: "ミニ暗号を10ビット鍵に拡大します（⊕鍵→かき混ぜ、を10ビット幅にしただけ。鍵はランダムに隠されています）。回路の工程はレベル9〜10と完全に同じですが、候補が1024通り・必要な反復が約25回になるため、ここでは手配線ではなく「オラクル→拡散」を1反復ずつボタンで回します。矢印のグラフを見ながら25回前後まで育てて、測定で鍵を言い当ててください（一致した時点でクリア）。回しすぎるとどうなるかも試せます。",
-    qlink: "10ビット（1024候補）では約25反復で確率99.9%——反復回数が√Nに比例することを体感できます。ではAESの128ビットでは？　候補は2の128乗≈3.4×10³⁸通り。このゲームの方式（古典シミュレーション）で矢印の一覧表を持つには約10²⁷テラバイトが必要で、地球上の全ストレージでも遠く及びません——一覧表を「状態」としてそのまま持てる量子ビットの存在意義がここにあります。ただし量子実機でも反復は (π/4)√(2¹²⁸) ≈ 1.4×10¹⁹回。1マイクロ秒に1反復でも約46万年かかり、誤り訂正済みの論理量子ビットが数千個（物理量子ビットでは数百万個規模）必要です。つまりグローバーはAES-128を実質64ビット相当に弱めるものの実用的な攻撃には程遠く、AES-256などへの移行で備えられます。それでも工程そのものは、このゲームで組んだ「検算→DにZ→逆計算＋拡散」のまま変わりません。",
-    qubits: 10, labels: [], gates: [],
-    mode: "sim",
-    goalHTML: "：反復を進めて鍵の矢印を育て、<strong>測定で隠された鍵を言い当てる</strong>こと（一致した時点でクリア）。最適な反復回数はおよそ (π/4)√1024 ≈ 25回です。",
+    desc: "ミニ暗号を10ビット鍵に拡大した本物の回路です。K9〜K0の10本と補助ビットDに、H×10 → オラクル（⊕P → かき混ぜS → 暗号文Cとの一致判定 → DにZ → すべて逆計算）→ 拡散、の1反復分・約100ゲートが配線済みです。かき混ぜSは「上の桁から順に K_i ⊕= K_(i-1)、最後にK0を反転」。暗号文Cは隠し鍵から作られていますが、回路は公開データのPとCだけから組まれています。「▶ 回路に1反復通す」で状態を回路に通し、矢印グラフが育ったら（最適は約25反復）測定で鍵を言い当ててください（一致でクリア）。回しすぎるとどうなるかも試せます。",
+    qlink: "10ビット（1024候補）では約25反復で確率99.9%——反復回数が√Nに比例することを体感できます。実機でも同じで、この回路を25回繰り返しかけます（ここでは同じ回路に状態を通し直しています）。ではAESの128ビットでは？　候補は2の128乗≈3.4×10³⁸通り。このゲームの方式（古典シミュレーション）で矢印の一覧表を持つには約10²⁷テラバイトが必要で、地球上の全ストレージでも遠く及びません——一覧表を「状態」としてそのまま持てる量子ビットの存在意義がここにあります。ただし量子実機でも反復は (π/4)√(2¹²⁸) ≈ 1.4×10¹⁹回。1マイクロ秒に1反復でも約46万年かかり、誤り訂正済みの論理量子ビットが数千個（物理量子ビットでは数百万個規模）必要です。つまりグローバーはAES-128を実質64ビット相当に弱めるものの実用的な攻撃には程遠く、AES-256などへの移行で備えられます。それでも回路の工程は、このゲームで組んだ「検算→DにZ→逆計算＋拡散」のまま変わりません。",
+    qubits: 11, labels: ["K9","K8","K7","K6","K5","K4","K3","K2","K1","K0","D"],
+    gates: [],
+    canvasW: 2380,
+    mode: "loop",
+    preset: sim10Preset,
+    goalHTML: "：回路に反復を通して鍵の矢印を育て、<strong>測定で隠された鍵を言い当てる</strong>こと（一致した時点でクリア）。最適な反復回数はおよそ (π/4)√1024 ≈ 25回です。「やり直す」ごとに鍵は変わりますが、回路の形は変わりません（変わるのは一致判定のXの位置＝公開の暗号文Cだけ）。",
     dialogue: [
-      { who:'cat', img:'cat', text:'仕上げに、ミニ暗号を鍵10ビットに広げてみよう。暗号化は同じ「⊕鍵→かき混ぜ」を10ビット幅にしただけ。オラクルの工程も、検算→DにZ→逆計算でまったく同じだよ。' },
+      { who:'cat', img:'cat', text:'仕上げに、ミニ暗号を鍵10ビットに広げてみよう。暗号化は同じ「⊕鍵→かき混ぜ」を10ビット幅にしただけ。オラクルの工程も、検算→DにZ→逆計算でまったく同じだよ。1反復分の回路——約100ゲート——は配線しておいた。' },
       { who:'rabbit', img:'rabbitThink', text:'候補は2の10乗で1024通り……答えが1つだと、1反復では育ちきりませんよね。何回まわせばいいんでしょうか。' },
-      { who:'cat', img:'catThink', text:'最適はおよそ (π/4)√N 回。√1024＝32だから、25回前後だね。1024本の配線を手で組むのは大変だから、ここでは「オラクル→拡散」をひとまとまりの工程として回そう。矢印が育っていくようすを見ながら、25回あたりで測定してごらん。' },
+      { who:'cat', img:'catThink', text:'最適はおよそ (π/4)√N 回。√1024＝32だから、25回前後だね。25回ぶん横に並べると2500ゲートを超えて画面に収まらないから、実機と同じように<strong>同じ回路を繰り返しかける</strong>——ここでは、いまの状態をもう一度回路に通す形で回そう。矢印が育っていくようすを見ながら、25回あたりで測定してごらん。' },
       { who:'rabbit', img:'rabbit', text:'まわしすぎたら、どうなるんですか？' },
       { who:'cat', img:'cat', text:'折り返しの回しすぎで、今度は逆に縮んでいく。それも自分の目で確かめてごらん。' },
     ],
@@ -665,19 +651,12 @@ function startGame(){
   document.getElementById('game-screen').style.display = 'flex';
   window.scrollTo(0, 0);
   document.getElementById('app-shell').classList.add('game-mode');
-  const sim = LV().mode === 'sim';
-  document.getElementById('playRow').style.display = sim ? 'none' : 'flex';
-  document.getElementById('simWrap').style.display = sim ? 'flex' : 'none';
-  document.getElementById('gate-bar').style.display = sim ? 'none' : 'flex';
-  document.getElementById('runBtn').style.display = sim ? 'none' : '';
-  document.getElementById('clearBtn').style.display = sim ? 'none' : '';
-  document.getElementById('answerBtn').style.display = sim ? 'none' : '';
-  if (sim){
-    simReset();
-  } else {
-    buildGateBar();
-    resetCircuit();
-  }
+  const loop = LV().mode === 'loop';
+  document.getElementById('gate-bar').style.display = loop ? 'none' : 'flex';
+  document.getElementById('runBtn').style.display = loop ? 'none' : '';
+  document.getElementById('answerBtn').style.display = loop ? 'none' : '';
+  if (!loop) buildGateBar();
+  resetCircuit();
 }
 
 function loadLevel(idx){
@@ -789,12 +768,17 @@ function nodeWidth(n){ return (n.type === 'INPUT' || n.type === 'OUTPUT') ? 66 :
 function nodeHeight(n){
   if (n.type === 'INPUT' || n.type === 'OUTPUT') return 38;
   const k = GATESPEC[n.type].pins;
-  return k === 1 ? 46 : (k === 2 ? 66 : (k === 3 ? 92 : 118));
+  return k === 1 ? 46 : (k === 2 ? 66 : (k === 3 ? 92 : (k === 4 ? 118 : 56 * (k - 1) + 44)));
+}
+function pinSpacing(node){
+  const k = (GATESPEC[node.type] || {}).pins || 1;
+  return k > 4 ? 56 : 24;
 }
 function pinPos(pin){
   const node = getNode(pin.nodeId), w = nodeWidth(node), h = nodeHeight(node);
   const list = pin.kind === 'in' ? node.inPins : node.outPins;
-  const y = node.y + h/2 - ((list.length - 1) * 24) / 2 + pin.index * 24;
+  const sp = (node.type === 'INPUT' || node.type === 'OUTPUT') ? 24 : pinSpacing(node);
+  const y = node.y + h/2 - ((list.length - 1) * sp) / 2 + pin.index * sp;
   return { x: pin.kind === 'in' ? node.x : node.x + w, y };
 }
 
@@ -805,20 +789,30 @@ function resetCircuit(skipPreset){
   inputBits = new Array(lv.qubits).fill(0);
   if (lv.mode === 'mystery') mysteryKey = Math.floor(Math.random() * 8);
   const wrap = document.getElementById('canvasWrap');
-  const minH = lv.qubits === 4 ? 425 : (lv.qubits === 3 ? 340 : (lv.qubits === 2 ? 270 : 220));
+  const minH = lv.qubits >= 5 ? (40 + lv.qubits * 64 + 50)
+    : (lv.qubits === 4 ? 425 : (lv.qubits === 3 ? 340 : (lv.qubits === 2 ? 270 : 220)));
   const W = Math.max((wrap.clientWidth || 760) - 2, 560, lv.canvasW || 0);
   const H = Math.max((wrap.clientHeight || 0) - 2, minH);
   svg.setAttribute('width', W);
   svg.setAttribute('height', H);
-  const ys = lv.qubits === 1 ? [110] : (lv.qubits === 2 ? [70, 190] : (lv.qubits === 3 ? [50, 160, 270] : [40, 145, 250, 355]));
+  const ys = lv.qubits >= 5 ? Array.from({ length: lv.qubits }, (_, i) => 40 + i * 64)
+    : (lv.qubits === 1 ? [110] : (lv.qubits === 2 ? [70, 190] : (lv.qubits === 3 ? [50, 160, 270] : [40, 145, 250, 355])));
   // 出力ノードは「見えている幅」の内側に置く（狭い画面でも最初から見える。
   // キャンバス右側の余白は作業スペースとしてスクロールで使える）
   const visW = Math.min(W, (wrap.clientWidth || W) - 2);
   const outX = Math.max(visW - 104, 250);
   lv.labels.forEach((name, i) => addNode('INPUT', 28, ys[i], {label:name, qidx:i}));
   lv.labels.forEach((name, i) => addNode('OUTPUT', outX, ys[i], {label:name, qidx:i}));
-  // 途中まで組んだ回路を最初から配置するレベル（グローバー章など）
-  if (lv.preset && !skipPreset) buildGateChain(lv.preset, false);
+  // 10ビット探索レベル：隠し鍵と暗号文を作り直し、状態をリセット
+  if (lv.mode === 'loop'){
+    sim10Key = Math.floor(Math.random() * 1024);
+    sim10C = sim10Enc(sim10Key);
+    loopState = null;
+    loopK = 0;
+  }
+  // 途中まで組んだ回路を最初から配置するレベル（関数なら都度生成。loopは出力まで配線済みにする）
+  const pre = typeof lv.preset === 'function' ? lv.preset() : lv.preset;
+  if (pre && !skipPreset) buildGateChain(pre, lv.mode === 'loop');
   hideNextBtn();
   document.getElementById('verifyWrap').classList.remove('visible');
   document.getElementById('measureResult').textContent = '';
@@ -997,6 +991,14 @@ function applyGate(s, type, qs, n){
   } else if (type === 'CCCX'){
     const m1 = maskOf(qs[0], n), m2 = maskOf(qs[1], n), m3 = maskOf(qs[2], n), mt = maskOf(qs[3], n);
     for (let i = 0; i < N; i++) if ((i & m1) && (i & m2) && (i & m3) && !(i & mt)){ const j = i | mt, t = s[i]; s[i] = s[j]; s[j] = t; }
+  } else if (type === 'MCX'){
+    // 全制御が1のときだけ最後のピンの量子ビットを反転
+    const cm = qs.slice(0, -1).reduce((m, q) => m | maskOf(q, n), 0);
+    const mt = maskOf(qs[qs.length - 1], n);
+    for (let i = 0; i < N; i++) if ((i & cm) === cm && !(i & mt)){ const j = i | mt, t = s[i]; s[i] = s[j]; s[j] = t; }
+  } else if (type === 'MCZ'){
+    const cm = qs.reduce((m, q) => m | maskOf(q, n), 0);
+    for (let i = 0; i < N; i++) if ((i & cm) === cm) s[i] = -s[i];
   } else if (type === 'ORACLE'){
     // 封印された判定回路：ピンに入った3ビットが隠し鍵と一致した候補の矢印だけ反転
     for (let i = 0; i < N; i++){
@@ -1077,8 +1079,9 @@ function render(){
       const fs = spec.pins === 1 ? 19 : (node.type === 'CCX' ? 11 : (node.type === 'ORACLE' ? 28 : 12));
       out += `<text x="${node.x + w/2}" y="${node.y + h/2 + (spec.pins===1 ? 7 : (node.type==='ORACLE' ? 10 : 4))}" font-size="${fs}" font-weight="950" text-anchor="middle" fill="${spec.dark ? '#ffd44a' : '#1b2340'}" pointer-events="none">${spec.short}</text>`;
       if (spec.pinMarks){
+        const msp = pinSpacing(node);
         for (let i = 0; i < spec.pins; i++){
-          const py = node.y + h/2 - ((spec.pins - 1) * 24) / 2 + i * 24;
+          const py = node.y + h/2 - ((spec.pins - 1) * msp) / 2 + i * msp;
           out += `<text x="${node.x + 12}" y="${py + 4}" font-size="11" font-weight="900" text-anchor="middle" fill="${stroke}" pointer-events="none">${spec.pinMarks[i]}</text>`;
           out += `<text x="${node.x + w - 12}" y="${py + 4}" font-size="11" font-weight="900" text-anchor="middle" fill="${stroke}" pointer-events="none">${spec.pinMarks[i]}</text>`;
         }
@@ -1099,6 +1102,21 @@ function render(){
 
 function renderStatePanel(){
   const lv = LV(), n = lv.qubits;
+  if (lv.mode === 'loop'){
+    document.getElementById('spInputNote').innerHTML =
+      `手元のデータ：平文 P=${SIM10_P.toString(2).padStart(10,'0')}／暗号文 C=${sim10C.toString(2).padStart(10,'0')}<br>（回路はこの2つだけから組まれています。鍵はどこにも書かれていません）`;
+    let html = `<div id="loopStats">反復：<strong>${loopK}回</strong>　最適はおよそ25回（(π/4)√1024）</div>`;
+    html += '<canvas id="loopCanvas" width="1024" height="140" style="width:100%;background:#fff;border:1px solid #c9d2e4;border-radius:6px"></canvas>';
+    html += '<div class="sim-caption">1024個の鍵候補それぞれの矢印の長さ（横軸＝候補 0000000000〜1111111111）</div>';
+    html += `<div class="loop-btns">
+      <button class="btn btn-p" onclick="loopIterate()">▶ 回路に1反復通す</button>
+      <button class="btn" onclick="loopTo25()">25反復まで回す</button>
+      <button class="btn" onclick="loopResetKey()">鍵を変えてやり直す</button>
+    </div>`;
+    document.getElementById('ampTable').innerHTML = html;
+    drawLoopCanvas();
+    return;
+  }
   const idx = panelInputIdx();
   const ev = evalCircuit(idx);
   document.getElementById('spInputNote').innerHTML = lv.mode === 'unitary'
@@ -1218,6 +1236,29 @@ svg.addEventListener('pointercancel', () => { dragNode = null; });
 // ====================== 測定 ======================
 document.getElementById('measureBtn').addEventListener('click', () => {
   const lv = LV(), n = lv.qubits;
+  if (lv.mode === 'loop'){
+    if (!loopState){
+      document.getElementById('measureResult').textContent = 'まず「▶ 回路に1反復通す」で回路を通してから測定してください。';
+      return;
+    }
+    let r = Math.random(), acc = 0, hit = 0;
+    for (let i = 0; i < loopState.length; i++){ acc += loopState[i] * loopState[i]; if (r <= acc){ hit = i; break; } }
+    const keyBits = (hit >> 1).toString(2).padStart(10, '0');
+    const ok = (hit >> 1) === sim10Key;
+    document.getElementById('measureResult').innerHTML =
+      `測定結果：鍵の候補 <strong>|${keyBits}⟩</strong>（D=${hit & 1}）<br>` +
+      (ok ? `隠していた鍵は |${sim10Key.toString(2).padStart(10,'0')}⟩ —— <strong style="color:#1aa85a">一致！鍵を言い当てました 🎉</strong>`
+          : `隠していた鍵は |${sim10Key.toString(2).padStart(10,'0')}⟩ —— はずれ。反復の回数を調整してもう一度どうぞ。`);
+    if (ok){
+      if (!cleared.includes(currentLevelIdx)){
+        cleared.push(currentLevelIdx);
+        localStorage.setItem('oracle_workshop_cleared', JSON.stringify(cleared));
+        buildLevelList();
+      }
+      showNextBtn();
+    }
+    return;
+  }
   const ev = evalCircuit(panelInputIdx());
   if (!ev){
     document.getElementById('measureResult').textContent = '配線が未完成のため測定できません。';
@@ -1356,8 +1397,8 @@ function buildGateChain(list, wireOutputs){
       cursor[q] = nd.outPins[k];
     });
   };
-  if (visW >= 520){
-    // 横並び（列ごと）レイアウト
+  if (visW >= 520 || list.length > 40){
+    // 横並び（列ごと）レイアウト（ゲート数が多い回路は狭い画面でも横並び＋スクロール）
     const COLW = 100;
     for (const g of list){
       const nd = addNode(g.t, 0, 0);
@@ -1445,69 +1486,136 @@ function showClearScreen(){
   document.getElementById('clear-screen').style.display = '';
 }
 
-// ====================== 10ビット探索シミュレータ ======================
-// M=1のグローバーは2次元部分空間の回転で厳密に書ける：
-// k反復後、鍵の振幅 = sin((2k+1)θ)、他は cos((2k+1)θ)/√(N−1)、θ = asin(1/√N)
-const SIM_N = 1024;
-const SIM_TH = Math.asin(1 / Math.sqrt(SIM_N));
-let simK = 0, simKey = 0, simTimer = null;
+// ====================== 10ビット探索（実回路への反復適用） ======================
+// レベル11では、1反復分の本物の回路（H×10＋オラクル＋拡散）をキャンバスに配線し、
+// その回路に状態ベクトル（2^11＝2048本の矢印）を繰り返し通す。
+const SIM10_P = 0b1010101010;   // 公開の平文
+let sim10Key = 0;               // 隠し鍵（リセットごとにランダム）
+let sim10C = 0;                 // 暗号文 = Enc(P, 鍵)。回路はPとCだけから組む
+let loopState = null, loopK = 0;
 
-function simKeyAmp(){ return Math.sin((2 * simK + 1) * SIM_TH); }
-function simOtherAmp(){ return Math.cos((2 * simK + 1) * SIM_TH) / Math.sqrt(SIM_N - 1); }
-function simBits(i){ return i.toString(2).padStart(10, '0'); }
+// ミニ暗号の10ビット版: Enc(P,K) = かき混ぜS(K⊕P)。
+// S: 上の桁から順に K_i ^= K_{i-1}（i=9..1）、最後に K0 を反転
+function sim10Enc(k){
+  let t = k ^ SIM10_P;
+  for (let i = 9; i >= 1; i--) t ^= ((t >> (i - 1)) & 1) << i;
+  t ^= 1;
+  return t;
+}
 
-function simReset(){
-  simK = 0;
-  simKey = Math.floor(Math.random() * SIM_N);
-  clearInterval(simTimer); simTimer = null;
-  document.getElementById('simResult').innerHTML = '';
-  document.getElementById('simScheme').innerHTML =
-    '回路の工程（レベル9〜10と同じ。幅が10ビットになっただけ）：<br>' +
-    '<span class="blk h">H×10</span> →（ <span class="blk">オラクル：検算（⊕鍵→かき混ぜ→一致判定）</span> → ' +
-    '<span class="blk z">DにZ</span> → <span class="blk">逆計算</span> → <span class="blk h">拡散</span> ）を繰り返し → 測定';
-  simRender();
+// 1反復分の回路（ゲート列）。qubit 0..9 = K9..K0（上がK9）、qubit 10 = D
+function sim10Preset(){
+  const g = [];
+  const XP = c => { for (let j = 0; j <= 9; j++) if ((SIM10_P >> j) & 1) g.push({t:'X', q:[9 - j], c}); };
+  const XC0 = c => { for (let j = 0; j <= 9; j++) if (!((sim10C >> j) & 1)) g.push({t:'X', q:[9 - j], c}); };
+  const HALL = c => { for (let q = 0; q <= 9; q++) g.push({t:'H', q:[q], c}); };
+  const XALL = c => { for (let q = 0; q <= 9; q++) g.push({t:'X', q:[q], c}); };
+  const KALL = [0,1,2,3,4,5,6,7,8,9];
+  HALL(0);
+  // 検算：⊕P → かき混ぜS
+  XP(1);
+  for (let i = 9; i >= 1; i--) g.push({t:'CNOT', q:[10 - i, 9 - i], c: 2 + ((9 - i) % 2)});
+  g.push({t:'X', q:[9], c:4});
+  // Cとの一致判定（Cの0の桁をXで挟んで多重制御X）
+  XC0(5); g.push({t:'MCX', q:[...KALL, 10], c:6}); XC0(7);
+  // 印つけ
+  g.push({t:'Z', q:[10], c:8});
+  // 逆計算：一致判定 → S → ⊕P をすべて逆走
+  XC0(9); g.push({t:'MCX', q:[...KALL, 10], c:10}); XC0(11);
+  g.push({t:'X', q:[9], c:12});
+  for (let i = 1; i <= 9; i++) g.push({t:'CNOT', q:[10 - i, 9 - i], c: 13 + ((i - 1) % 2)});
+  XP(15);
+  // 拡散（K1〜K10の10本のみ。Dには触れない）
+  HALL(16); XALL(17); g.push({t:'MCZ', q:KALL, c:18}); XALL(19); HALL(20);
+  return g;
 }
-function simRender(){
-  const c = document.getElementById('simCanvas'), ctx = c.getContext('2d');
-  ctx.clearRect(0, 0, 1024, 230);
-  const ak = Math.abs(simKeyAmp()), ao = Math.abs(simOtherAmp());
-  ctx.fillStyle = '#8a97b8';
-  ctx.fillRect(0, 228 - ao * 220, 1024, Math.max(1, ao * 220));
-  ctx.fillStyle = '#d4a017';
-  ctx.fillRect(simKey, 228 - ak * 220, 2, Math.max(1, ak * 220));
-  const pk = simKeyAmp() ** 2;
-  const pmax = Math.max(pk, simOtherAmp() ** 2);
-  document.getElementById('simStats').innerHTML =
-    `反復：<strong>${simK}回</strong>　／　いちばん長い矢印の確率：<strong>${(pmax * 100).toFixed(1)}%</strong>` +
-    `　／　最適はおよそ25回（(π/4)√1024 ≈ 25.1）`;
-}
-function simStepOnce(){ simK++; simRender(); }
-document.getElementById('simStep1').addEventListener('click', () => { simStepOnce(); });
-document.getElementById('simAuto').addEventListener('click', () => {
-  if (simTimer){ clearInterval(simTimer); simTimer = null; return; }
-  simTimer = setInterval(() => {
-    if (simK >= 25){ clearInterval(simTimer); simTimer = null; return; }
-    simStepOnce();
-  }, 130);
-});
-document.getElementById('simResetBtn').addEventListener('click', () => { simReset(); });
-document.getElementById('simMeasureBtn').addEventListener('click', () => {
-  const pk = simKeyAmp() ** 2;
-  let hit;
-  if (Math.random() < pk) hit = simKey;
-  else { hit = Math.floor(Math.random() * (SIM_N - 1)); if (hit >= simKey) hit++; }
-  const ok = hit === simKey;
-  document.getElementById('simResult').innerHTML =
-    `測定結果：<strong>|${simBits(hit)}⟩</strong>（このときの鍵の確率 ${(pk*100).toFixed(1)}%）<br>` +
-    (ok ? `隠していた鍵は |${simBits(simKey)}⟩ —— <strong style="color:#1aa85a">一致！鍵を言い当てました 🎉</strong>`
-        : `隠していた鍵は |${simBits(simKey)}⟩ —— はずれ。反復を進めて（または回しすぎを戻して）もう一度どうぞ。`);
-  if (ok && !cleared.includes(currentLevelIdx)){
-    cleared.push(currentLevelIdx);
-    localStorage.setItem('oracle_workshop_cleared', JSON.stringify(cleared));
-    buildLevelList();
+
+// 回路を解析（完成チェック・スレッド・実行順）。evalCircuitと同じ規則
+function loopAnalyze(){
+  const n = LV().qubits;
+  for (const nd of nodes){
+    if (nd.type === 'INPUT'){ if (!wireFrom(nd.outPins[0])) return null; }
+    else if (nd.type === 'OUTPUT'){ if (!wireTo(nd.inPins[0])) return null; }
+    else {
+      for (const p of nd.inPins) if (!wireTo(p)) return null;
+      for (const p of nd.outPins) if (!wireFrom(p)) return null;
+    }
   }
-  if (ok) showNextBtn();
-});
+  const gq = new Map(); const perm = new Array(n).fill(-1);
+  for (const inp of nodes.filter(x => x.type === 'INPUT')){
+    let w = wireFrom(inp.outPins[0]), guard = 0;
+    while (w){
+      if (++guard > 3000) return null;
+      const pin = getPin(w.toPin), nd = getNode(pin.nodeId);
+      if (nd.type === 'OUTPUT'){ perm[inp.qidx] = nd.qidx; break; }
+      if (!gq.has(nd.id)) gq.set(nd.id, []);
+      gq.get(nd.id)[pin.index] = inp.qidx;
+      w = wireFrom(nd.outPins[pin.index]);
+    }
+  }
+  if (perm.some((p, q) => p !== q)) return null;
+  const gates = nodes.filter(x => x.type !== 'INPUT' && x.type !== 'OUTPUT');
+  const indeg = new Map(), children = new Map();
+  gates.forEach(g => { indeg.set(g.id, 0); children.set(g.id, []); });
+  for (const g of gates){
+    for (const pid of g.inPins){
+      const src = getNode(getPin(wireTo(pid).fromPin).nodeId);
+      if (src.type !== 'INPUT'){ indeg.set(g.id, indeg.get(g.id) + 1); children.get(src.id).push(g.id); }
+    }
+  }
+  const queue = gates.filter(g => indeg.get(g.id) === 0).map(g => g.id);
+  const order = [];
+  while (queue.length){
+    const gid = queue.shift(); order.push(gid);
+    for (const cid of children.get(gid)){ indeg.set(cid, indeg.get(cid) - 1); if (indeg.get(cid) === 0) queue.push(cid); }
+  }
+  if (order.length !== gates.length) return null;
+  return { order, gq, n };
+}
+
+// 1反復通す。2回目以降は先頭のH層（入力ノード直結のH）をスキップして再突入
+function loopPassOnce(){
+  const a = loopAnalyze();
+  if (!a){ flashStatus('配線が未完成です（すべてのピンをつないでください）'); return false; }
+  const first = !loopState;
+  if (first){ loopState = new Float64Array(1 << a.n); loopState[0] = 1; }
+  for (const gid of a.order){
+    const g = getNode(gid);
+    if (!first && g.type === 'H' &&
+        g.inPins.every(p => getNode(getPin(wireTo(p).fromPin).nodeId).type === 'INPUT')) continue;
+    applyGate(loopState, g.type, a.gq.get(gid) || [], a.n);
+  }
+  return true;
+}
+function loopIterate(){
+  if (!loopPassOnce()) return;
+  loopK++;
+  renderStatePanel();
+}
+function loopTo25(){
+  while (loopK < 25){ if (!loopPassOnce()) return; loopK++; }
+  renderStatePanel();
+}
+function loopResetKey(){
+  resetCircuit();
+}
+function drawLoopCanvas(){
+  const c = document.getElementById('loopCanvas');
+  if (!c) return;
+  const ctx = c.getContext('2d');
+  ctx.clearRect(0, 0, 1024, 140);
+  for (let k = 0; k < 1024; k++){
+    let a;
+    if (!loopState) a = k === 0 ? 1 : 0;   // まだ通していない：|0…0⟩
+    else a = Math.hypot(loopState[k * 2], loopState[k * 2 + 1]);
+    if (a > 0.001){
+      ctx.fillStyle = '#c69a1e';
+      ctx.fillRect(k, 138 - a * 132, Math.max(1, 1), Math.max(1, a * 132));
+    }
+  }
+  ctx.fillStyle = '#8a97b8';
+  ctx.fillRect(0, 138, 1024, 2);
+}
 
 // ====================== 起動 ======================
 // 前回開いていたレベルを復元する（リロードでレベル1に戻らないように）
