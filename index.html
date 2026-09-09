@@ -164,6 +164,12 @@ a.head-btn{text-decoration:none;display:inline-flex;align-items:center;justify-c
 .gateBtn:hover{background:#dde6f7;border-color:#3f6fe0}
 .gateBtn.armed{background:#ffe9ad;border-color:#d4870a;box-shadow:inset 0 0 0 1px #d4870a}
 .gate-bar-hint{font-size:11px;color:#5a6c99;font-weight:700;margin-left:auto}
+#cipherSel{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:7px 14px;background:#fdf6e2;border-bottom:1px solid #d9c27a;flex-shrink:0}
+.cipher-label{font-size:12px;font-weight:900;color:#8a6d1e;white-space:nowrap}
+#cipherBtns{display:flex;gap:6px}
+.cipherBtn{padding:6px 12px;background:#fff;border:1.5px solid #d9b84a;border-radius:6px;color:#4a3a10;cursor:pointer;font-size:13px;font-weight:900;font-family:ui-monospace,monospace;touch-action:manipulation}
+.cipherBtn.on{background:#d4a017;border-color:#8a6d1e;color:#fff}
+#cipherHint{font-size:12px;font-weight:800;color:#7a6320}
 #toolbar{padding:8px 14px;background:#e9eefb;border-bottom:1px solid #c9d2e4;display:flex;gap:8px;align-items:center;flex-shrink:0;flex-wrap:wrap}
 #toolbar .btn{padding:7px 14px;font-size:13px}
 #status{margin-left:auto;font-size:13px;font-weight:900;color:var(--ink)}
@@ -337,6 +343,11 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
           <span id="gateBtns" style="display:flex;gap:6px;flex-wrap:wrap"></span>
           <span class="gate-bar-hint">配線：出力ピン（青）→入力ピンの順にタップかドラッグ／ゲートはドラッグで移動・✕で削除／線はタップで削除／線の見た目の交差に意味はありません（意味を持つのは、どのピンにつながるかだけ）</span>
         </div>
+        <div id="cipherSel" style="display:none">
+          <span class="cipher-label">暗号文 C を選ぶ：</span>
+          <span id="cipherBtns"></span>
+          <span id="cipherHint"></span>
+        </div>
         <div id="toolbar">
           <button id="backToIntroBtn" onclick="showIntro()">← 説明へ</button>
           <button id="runBtn" class="btn btn-p">▶ 検証する</button>
@@ -426,6 +437,33 @@ const OW_L10 = [ ...OW_L9, ...OW_DIFF2(14) ];
 const T9 = [0.5,0, 0.5,0, -0.5,0, 0.5,0];
 // L10: グローバー1反復後（4候補・答え1つは確率100%。この組み方では符号は反転）
 const T10 = [0,0, 0,0, -1,0, 0,0];
+
+// ステージ9で選べる暗号文C（既定は01）。かき混ぜSは 00→01→10→11→00 の巡回（＋1）
+let stage9C = 0b01;
+const S_TBL = [1, 2, 3, 0];      // S(x)
+const SINV_TBL = [3, 0, 1, 2];   // S⁻¹(y)：SINV_TBL[S(x)] = x
+function stage9Key(C){ return SINV_TBL[C] ^ 0b10; }   // その暗号文Cを生む鍵（平文P=10）
+// 選んだCに合わせた一致判定（Cの0の桁の線をXで挟む）
+function stage9CMP(col){
+  const wrap = [];
+  if (!(stage9C & 2)) wrap.push(0);   // K1桁が0
+  if (!(stage9C & 1)) wrap.push(1);   // K0桁が0
+  const g = [];
+  wrap.forEach(q => g.push({ t:'X', q:[q], c:col }));
+  g.push({ t:'CCX', q:[0,1,2], c:col + 1 });
+  wrap.forEach(q => g.push({ t:'X', q:[q], c:col + 2 }));
+  return g;
+}
+function stage9Solution(){
+  return [ ...OW_H2(0), ...OW_ENC(1), ...stage9CMP(4), { t:'Z', q:[2], c:7 }, ...stage9CMP(8), ...OW_UNENC(11) ];
+}
+function stage9Target(){
+  const key = stage9Key(stage9C);
+  const t = new Array(8).fill(0);
+  for (let k = 0; k < 4; k++) t[k << 1] = (k === key ? -0.5 : 0.5);   // D=0 の行だけ、鍵は−
+  return t;
+}
+function bits2(x){ return x.toString(2).padStart(2, '0'); }
 
 // ====================== レベル定義 ======================
 // qubits: 量子ビット数（上の行が q0）。基底状態の番号は q0 を最上位ビットとする。
@@ -565,21 +603,22 @@ const LEVELS = [
     solution: OW_L8,
   },
   {
-    name: "ミニ暗号：平文と暗号文から鍵を検算する",
+    name: "ミニ暗号：暗号文に合わせてオラクルを組む",
     label: "LEVEL 9", shortName: "ミニ暗号",
-    desc: "おもちゃの暗号を定義します：暗号文 C ＝「平文Pに鍵K（2桁）を⊕して、かき混ぜS（2進で＋1：CNOT(K0→K1)→X(K0)）を1回かけたもの」。手元にあるのは平文 P=10 と暗号文 C=01 だけで、鍵は知りません。検算「候補Kで暗号化するとC=01になるか」をKレジスタ上で直接計算するオラクルを組んでください。手順：H×2（K1・K0）→ ⊕P（Pの1の桁＝K1にX）→ かき混ぜS（CNOT(K0→K1)→X(K0)）→ 一致判定（Cの0の桁＝K1をXで挟み、トフォリ(K1,K0→D)）→ DにZ → 一致判定と暗号化を逆順にすべて戻す。",
-    qlink: "本物の暗号（AESなど）も「鍵を⊕する → かき混ぜる（S-box）」の繰り返しでできており、このミニ暗号はその1往復だけを取り出したものです。検算オラクルの作り方は同じ：①暗号化の手順を可逆論理で書く ②既知の暗号文とX挟み＋多重制御で比較してDへ ③DにZ ④全部逆走。材料は公開の暗号化手順と手元のP・Cだけで、鍵はどこにも使っていません。AESでは鍵が2の128乗通り・回路が数万ゲートになるだけで、工程はこのレベルと同一です。<br><br>なお解答例では、Zの前後で「一致判定を閉じるX」と「逆計算が開くX」がK1の線上で隣り合います。同じ線のX2個連続は反転の反転＝何もしないのと同じなので、実はこの2個は消しても正しく動きます（消して検証してみてください）。ここでは「検算→印→逆計算」というブロックの対称性——考えずに機械的に逆走すれば必ず戻せること——が見えるよう、あえて残しています。実際の量子コンパイラは、こうした連続する同じゲートを自動で掃除して回路を短くします。",
+    desc: "おもちゃの暗号を定義します：暗号文 C ＝「平文Pに鍵K（2桁）を⊕して、かき混ぜS（2進で＋1：CNOT(K0→K1)→X(K0)）を1回かけたもの」。平文は P=10 で固定、暗号文 C は下のボタンで選べます。選んだ C を検算するオラクルを組んでください。手順：H×2（K1・K0）→ ⊕P（Pの1の桁＝K1にX）→ かき混ぜS（CNOT(K0→K1)→X(K0)）→ 一致判定（Cの0の桁をXで挟み、トフォリ(K1,K0→D)）→ DにZ → 一致判定と暗号化を逆順にすべて戻す。Cに依存するのは一致判定の「Xで挟む線」だけ——Cの0の桁の線を挟みます。",
+    qlink: "本物の暗号（AESなど）も「鍵を⊕する → かき混ぜる（S-box）」の繰り返しでできており、このミニ暗号はその1往復だけを取り出したものです。検算オラクルの作り方は同じ：①暗号化の手順を可逆論理で書く ②既知の暗号文とX挟み＋多重制御で比較してDへ ③DにZ ④全部逆走。材料は公開の暗号化手順と手元のP・Cだけで、鍵はどこにも使っていません。<br><br>暗号文Cを変えても、回路の大部分（H・⊕P・かき混ぜS・Z・逆計算）は同じままで、変わるのは<strong>一致判定でXを挟む線の位置だけ</strong>です（Cの0の桁の線を挟む）。このミニ暗号のかき混ぜSは 00→01→10→11→00 の巡回なので、C＝01なら鍵10、C＝10なら鍵11、C＝11なら鍵00、C＝00なら鍵01が検算に合格します。Cを選んで組み、印がつく鍵が一覧表で切り替わることを確かめてください。",
     qubits: 3, labels: ["K1","K0","D"], gates: ["H","X","Z","CNOT","CCX"],
     canvasW: 1680,
-    mode: "state", target: T9,
-    goalHTML: "：4通りの鍵候補に0.5ずつの矢印を立てたうえで、<strong>検算に合格する鍵の枝だけ</strong>矢印が反転した一覧表を作ること（Dはすべての枝で0に戻す）。どの鍵に印がつくかは、組んでから一覧表で確かめてください。「▶ 検証する」で内部の目標表と照合します。",
+    mode: "state", target: stage9Target, solution: stage9Solution,
+    pickCipher: true,
+    goalHTML: "：下のボタンで選んだ暗号文 C に対して、<strong>その C を生む鍵の枝だけ</strong>が反転（−0.5）し、残り3本が＋0.5、Dはすべて0に戻った一覧表を作ること。C を変えると目標の反転位置も変わります。",
     dialogue: [
       { who:'rabbit', img:'rabbitThink', text:'「隣どうしが違う」のような条件だけでなく、本物の暗号みたいに「平文と暗号文から鍵を探す」オラクルも組めるんでしょうか。' },
-      { who:'cat', img:'cat', text:'組めるよ。おもちゃの暗号をひとつ定義しよう。鍵Kは2桁。暗号化は「平文Pに鍵を⊕して、かき混ぜSを1回かける」——Sは2進で＋1する回路だ。手元には平文P=10と暗号文C=01がある。鍵は、私たちも知らないことにしよう。' },
-      { who:'rabbit', img:'rabbit', text:'検算は「候補KをPに⊕して、Sをかけて、C=01と比べる」……比べた結果をDに書けばいいんですね。作業用のレジスタがないので、レベル7と同じように候補K自身を書き換えて、あとで逆計算で返します。' },
-      { who:'cat', img:'catThink', text:'そう。⊕Pは「Pの1の桁にX」、Sは「CNOTとX」、一致判定は「Cの0の桁をXで挟んでトフォリ」。全部、いままでの部品だね。組み上がったら、どの鍵に印がつくか一覧表で見てごらん——私たちは一度も鍵を計算していないのにね。' },
+      { who:'cat', img:'cat', text:'組めるよ。おもちゃの暗号をひとつ定義しよう。鍵Kは2桁。暗号化は「平文Pに鍵を⊕して、かき混ぜSを1回かける」——Sは2進で＋1する回路だ。平文はP=10で固定、暗号文Cは君が選んでいい。' },
+      { who:'rabbit', img:'rabbit', text:'検算は「候補KをPに⊕して、Sをかけて、選んだCと比べる」……比べた結果をDに書くんですね。作業用のレジスタがないので、レベル7と同じように候補K自身を書き換えて、あとで逆計算で返します。' },
+      { who:'cat', img:'catThink', text:'そう。⊕Pは「Pの1の桁にX」、Sは「CNOTとX」、一致判定は「Cの0の桁をXで挟んでトフォリ」。Cを変えたとき、回路のどこが変わるか——それを自分の手で確かめてほしいんだ。' },
+      { who:'rabbit', img:'rabbitThink', text:'⊕Pも、かき混ぜSも、Zも変わらない……変わるのは一致判定でXを挟む線だけ、ですか。Cの0の桁が動けば、挟む場所も動く。組んでみます。' },
     ],
-    solution: OW_L9,
   },
   {
     name: "鍵の一本釣り：4候補・1反復・100%",
@@ -674,8 +713,34 @@ function startGame(){
   document.getElementById('gate-bar').style.display = loop ? 'none' : 'flex';
   document.getElementById('runBtn').style.display = loop ? 'none' : '';
   document.getElementById('answerBtn').style.display = loop ? 'none' : '';
+  document.getElementById('cipherSel').style.display = LV().pickCipher ? 'flex' : 'none';
+  if (LV().pickCipher) buildCipherSel();
   if (!loop) buildGateBar();
   resetCircuit();
+}
+
+// 暗号文セレクタ（ステージ9）
+function buildCipherSel(){
+  const order = [0b01, 0b10, 0b11, 0b00];   // 巡回の見やすい順
+  document.getElementById('cipherBtns').innerHTML = order.map(c =>
+    `<button class="cipherBtn${c === stage9C ? ' on' : ''}" data-c="${c}">${bits2(c)}</button>`
+  ).join('');
+  document.querySelectorAll('#cipherBtns .cipherBtn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      stage9C = Number(btn.dataset.c);
+      document.querySelectorAll('#cipherBtns .cipherBtn').forEach(b => b.classList.toggle('on', b === btn));
+      updateCipherHint();
+      resetCircuit();   // 目標が変わるので組みかけをクリア
+    });
+  });
+  updateCipherHint();
+}
+function updateCipherHint(){
+  document.getElementById('cipherHint').innerHTML =
+    `→ この C を生む鍵は <strong>|${bits2(stage9Key(stage9C))}⟩</strong>。一致判定で挟むのは `
+    + ((!(stage9C & 2) && !(stage9C & 1)) ? 'K1とK0の両方'
+      : (!(stage9C & 2) ? 'K1' : (!(stage9C & 1) ? 'K0' : 'なし（Cが11なので挟むXは不要）')))
+    + ' の線';
 }
 
 function loadLevel(idx){
@@ -718,9 +783,10 @@ function goalTableHTML(lv){
     h += '<span class="goal-note">上のすべての入力パターンで、出力がこの表と一致すれば合格です。入力は左端の入力ノードをタップして切り替えて試せます。</span>';
     return h;
   }
+  const tgt = typeof lv.target === 'function' ? lv.target() : lv.target;
   let h = '<table><tr><th>答え候補</th><th>目標の矢印</th><th>確率</th></tr>';
-  for (let i = 0; i < lv.target.length; i++){
-    const a = lv.target[i];
+  for (let i = 0; i < tgt.length; i++){
+    const a = tgt[i];
     const p = Math.round(a * a * 1000) / 10;
     h += `<tr><td>|${ketStr(i, n)}⟩</td><td>${fmtAmp(a)}</td><td>${p}%</td></tr>`;
   }
@@ -1352,7 +1418,7 @@ document.getElementById('runBtn').addEventListener('click', () => {
     html += '</table>';
   } else {
     const s = evalCircuit(lv.input || 0).s;
-    const t = lv.target;
+    const t = typeof lv.target === 'function' ? lv.target() : lv.target;
     let dot = 0;
     for (let i = 0; i < s.length; i++) dot += s[i] * t[i];
     const sign = dot < 0 ? -1 : 1;
@@ -1470,7 +1536,7 @@ function buildGateChain(list, wireOutputs){
 }
 document.getElementById('answerBtn').addEventListener('click', () => {
   resetCircuit(true);
-  buildGateChain(LV().solution, true);
+  buildGateChain(typeof LV().solution === 'function' ? LV().solution() : LV().solution, true);
   document.getElementById('status').textContent = '（解答例を表示中）';
   updateAll();
 });
