@@ -458,6 +458,26 @@ const T9 = [0.5,0, 0.5,0, -0.5,0, 0.5,0];
 // L10: グローバー1反復後（4候補・答え1つは確率100%。この組み方では符号は反転）
 const T10 = [0,0, 0,0, -1,0, 0,0];
 
+// L13: 本物志向のミニ暗号（逆算できない＝非線形・多ラウンド）。鍵2ビット・ブロック3ビット・補助D。
+// 量子ビット順: K1=0,K0=1,B2=2,B1=3,B0=4,D=5。暗号 Enc(P,K)=(鍵加算→非線形S→拡散)を3ラウンド。
+// 平文P=101・暗号文C=001（これだけから回路を組む）。合格する鍵は01（＝この暗号でP→Cになる唯一の鍵）。
+function OW_CIPHER13(){
+  const g = []; let c = 0; const add = (t, q) => g.push({ t, q: q.slice(), c: c++ });
+  add('H', [0]); add('H', [1]);          // 4つの鍵候補を重ね合わせ
+  add('X', [2]); add('X', [4]);          // ブロックを平文P=101に初期化
+  const round = () => { add('CNOT', [1,4]); add('CNOT', [0,3]); add('CNOT', [1,2]); add('CCX', [4,3,2]); add('CNOT', [3,4]); add('CNOT', [2,3]); add('CNOT', [4,2]); };
+  const rinv  = () => { add('CNOT', [4,2]); add('CNOT', [2,3]); add('CNOT', [3,4]); add('CCX', [4,3,2]); add('CNOT', [1,2]); add('CNOT', [0,3]); add('CNOT', [1,4]); };
+  round(); round(); round();             // 暗号化（前向き）
+  add('X', [2]); add('X', [3]); add('CCCX', [2,3,4,5]); add('X', [2]); add('X', [3]); // 暗号文C=001と一致判定→D
+  add('Z', [5]);                         // 印つけ
+  add('X', [2]); add('X', [3]); add('CCCX', [2,3,4,5]); add('X', [2]); add('X', [3]); // 一致判定を戻す
+  rinv(); rinv(); rinv();                // 暗号化を逆計算
+  add('X', [2]); add('X', [4]);          // ブロック初期化を戻す
+  return g;
+}
+// L13ターゲット: 64次元。ブロック・Dが0の鍵状態のみ非ゼロ。鍵01(=index16)だけ−0.5、他+0.5
+const T13c = (() => { const t = new Array(64).fill(0); t[0] = 0.5; t[16] = -0.5; t[32] = 0.5; t[48] = 0.5; return t; })();
+
 // ステージ9で選べる暗号文C（既定は01）。かき混ぜSは 00→01→10→11→00 の巡回（＋1）
 let stage9C = 0b01;
 const S_TBL = [1, 2, 3, 0];      // S(x)
@@ -697,6 +717,27 @@ const LEVELS = [
     ],
     solution: [],
   },
+  {
+    name: "本物志向の暗号：逆算できない鍵探し",
+    label: "LEVEL 13", shortName: "非線形暗号",
+    desc: "これまでのミニ暗号は Enc(K)=S(K⊕P) で、鍵は K＝S⁻¹(C)⊕P と公式で逆算できました（試す必要がない）。実際の暗号のように「逆算の公式がない」ようにするには、非線形なS-box（＋2桁の値では作れないので3ビットのブロック）と複数ラウンドが要ります。この回路は、鍵2ビット・ブロック3ビット・非線形S層・3ラウンドのミニ暗号のオラクルを配線済みにしたものです。平文P=101と暗号文C=001だけから組まれていて、合格する鍵（この暗号でP→Cになる唯一の鍵）は組んだ結果として回路が選びます。「▶ 検証する」で、鍵01だけに印（−0.5）がつくことを確かめてください。補助ビット（B2B1B0・D）はすべて0に戻ります。",
+    qlink: "なぜ2ビットでは「逆算できない暗号」が作れないのか——2ビットの値の並べ替えは全部で24通りで、その<strong>すべてがアフィン写像（線形＋定数）</strong>になってしまうからです。アフィンな暗号は鍵についての連立1次方程式になり、公式で一発で解けます（試す必要がない）。非線形性は3ビット以上のS-boxで初めて生まれ、複数ラウンドと組み合わせると鍵を公式で分離できなくなり、<strong>本当に鍵を試すしかなくなります</strong>。この回路の暗号は非線形なので、K＝公式(P,C) が書けず、4つの鍵を実際に暗号化して比べるしかありません——それでもオラクルの作り方は今までと完全に同じ：ブロックをPに初期化 → 鍵で暗号化を前向きに計算 → 暗号文Cと一致判定 → DにZ → すべて逆計算。暗号を一度も逆に回していません。AESもS-boxと鍵混合を何ラウンドも重ねただけで、原理はこの回路と同じです。",
+    qubits: 6, labels: ["K1","K0","B2","B1","B0","D"], gates: ["H","X","Z","CNOT","CCX","CCCX"],
+    canvasW: 6200,
+    mode: "state", target: T13c,
+    ampFilter: i => (i & 15) === 0,   // ブロック・Dが0の鍵状態だけ一覧に出す
+    presetWired: true,
+    preset: OW_CIPHER13, solution: OW_CIPHER13,
+    goalHTML: "：配線済みの回路を「▶ 検証する」で確かめること。合格する鍵 <strong>|01⟩</strong> だけに印（−0.5）がつき、残り3つの鍵は＋0.5、補助ビット（B2B1B0・D）はすべて0に戻ります（一覧は鍵の状態だけを表示。先頭2桁K1K0が鍵）。",
+    dialogue: [
+      { who:'rabbit', img:'rabbitThink', text:'ステージ9の暗号、よく見たら K＝S⁻¹(C)⊕P で一発で逆算できますね。それだと、わざわざ探さなくても鍵が分かってしまう気がします。' },
+      { who:'cat', img:'cat', text:'鋭いところに気づいたね。実はあのミニ暗号は「かき混ぜS」も「⊕P」もアフィン——線形＋定数——だから、鍵は連立1次方程式で解けてしまう。本物の暗号が逆算できないのは、<strong>非線形なS-box</strong>を何ラウンドも重ねているからなんだ。' },
+      { who:'rabbit', img:'rabbit', text:'2ビットの鍵で、非線形な暗号は作れないんですか？' },
+      { who:'cat', img:'catThink', text:'2ビットの値の並べ替えは、実は全部アフィンになってしまうんだ。非線形はブロックを3ビットに広げて初めて作れる。この回路は鍵2ビット・ブロック3ビット・非線形S層を3ラウンド重ねた暗号のオラクルで、平文P=101と暗号文C=001だけから組んである。' },
+      { who:'rabbit', img:'rabbitThink', text:'非線形だから公式で逆算できない……4つの鍵を実際に暗号化して、Cと一致するものを探すしかない。それでもオラクルの作り方は、検算→印→逆計算で今までと同じなんですね。' },
+      { who:'cat', img:'cat', text:'そう。暗号がどれだけ複雑になっても、オラクルは「前向きに暗号化して比べる」だけ。検証してごらん——合格する鍵01だけに印がつくよ。' },
+    ],
+  },
 ];
 
 // ====================== 状態 ======================
@@ -917,9 +958,9 @@ function resetCircuit(skipPreset){
     loopState = null;
     loopK = 0;
   }
-  // 途中まで組んだ回路を最初から配置するレベル（関数なら都度生成。loopは出力まで配線済みにする）
+  // 途中まで組んだ回路を最初から配置するレベル（関数なら都度生成。loop/presetWiredは出力まで配線済みにする）
   const pre = typeof lv.preset === 'function' ? lv.preset() : lv.preset;
-  if (pre && !skipPreset) buildGateChain(pre, lv.mode === 'loop');
+  if (pre && !skipPreset) buildGateChain(pre, lv.mode === 'loop' || lv.presetWired);
   hideNextBtn();
   document.getElementById('verifyWrap').classList.remove('visible');
   document.getElementById('measureResult').textContent = '';
@@ -1354,6 +1395,7 @@ function renderStatePanel(){
   const s = ev.s;
   let html = '';
   for (let i = 0; i < s.length; i++){
+    if (lv.ampFilter && !lv.ampFilter(i)) continue;
     const a = s[i], p = a * a;
     const zero = Math.abs(a) < 0.004;
     const len = Math.round(20 * Math.abs(a));
@@ -1596,7 +1638,8 @@ document.getElementById('runBtn').addEventListener('click', () => {
     for (let i = 0; i < s.length; i++){
       const a = s[i] * sign;
       const pass = Math.abs(a - t[i]) < 0.02;
-      if (!pass) allPass = false;
+      if (!pass) allPass = false;   // 合否は全状態でチェック
+      if (lv.ampFilter && !lv.ampFilter(i)) continue;   // 表示は絞る
       html += `<tr class="${pass?'pass':'fail'}"><td>|${ketStr(i, n)}⟩</td><td>${fmtAmp(a)}</td><td>${fmtAmp(t[i])}</td></tr>`;
     }
     html += '</table>';
@@ -1723,7 +1766,7 @@ function renderDialogue(dialogue){
 }
 
 const CLEAR_DIALOGUE_1 = [
-  { who:'cat',    img:'cat',        text:'ここまでの12レベルを並べ直してみよう。' },
+  { who:'cat',    img:'cat',        text:'ここまでの13レベルを並べ直してみよう。' },
   { who:'rabbit', img:'rabbit',     text:'前半は検算でした。CNOTで⊕、トフォリで「かつ」、X挟みとCCCXで一致判定——条件の成否をDに書く回路たちです。' },
   { who:'cat',    img:'catThink',   text:'そう。後半はそれをオラクルに仕上げた。DにZで印をつけ、逆計算でDを返す。そして最後は、答えを知らない条件から組んで、グローバーで答えを引き出したね。まとめると——' },
 ];
@@ -1750,6 +1793,7 @@ function showClearScreen(){
     '＋拡散1反復 → 鍵が確率100%で一本釣り（4候補・答え1つ）<br>' +
     '10ビット印つけ → 1024本のうち鍵の1本だけが左を向く（でも測定では見えない）<br>' +
     '10ビット×約25反復 → √Nの体感（1024候補が99.9%に。128ビットへの距離も）<br>' +
+    '非線形・多ラウンドの暗号 → 逆算の公式がない＝本当に鍵を試すしかない（同じオラクル構成）<br>' +
     '<strong>オラクル＝条件を回路にコンパイルしたもの。答えは条件が選ぶ</strong>' +
     '<hr style="margin:12px 0;border-color:rgba(0,0,0,.15)">' +
     '<small>実際のAES鍵探索のオラクルも、暗号化の全手順（数万ゲート規模）を同じ3工程' +
