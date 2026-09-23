@@ -420,6 +420,11 @@ const GATESPEC = {
   // 10ビット探索用の多重制御ゲート（制御10個）
   MCX: { pins:11, btn:'MCX', w:86, fill:'#e2f4f0', stroke:'#1b6e63', short:'MCX', pinMarks:['●','●','●','●','●','●','●','●','●','●','⊕'] },
   MCZ: { pins:10, btn:'MCZ', w:86, fill:'#ece1fb', stroke:'#8a5ac4', short:'MCZ', pinMarks:['●','●','●','●','●','●','●','●','●','●'] },
+  // ショア用（複素振幅）：SWAP＝2本の線を入れ替え、CSWAP＝制御付き入れ替え、R₂†/R₃†＝逆QFTの制御位相回転
+  SWAP:  { pins:2, btn:'SWAP ⨯⨯', w:66, fill:'#e2f4f0', stroke:'#1b6e63', short:'⨯⨯', pinMarks:['⨯','⨯'] },
+  CSWAP: { pins:3, btn:'CSWAP ●⨯⨯', w:86, fill:'#e2f4f0', stroke:'#1b6e63', short:'C⨯⨯', pinMarks:['●','⨯','⨯'] },
+  CP2:   { pins:2, w:66, fill:'#ece1fb', stroke:'#8a5ac4', short:'R₂†', pinMarks:['●','●'], phase:-Math.PI/2 },
+  CP3:   { pins:2, w:66, fill:'#ece1fb', stroke:'#8a5ac4', short:'R₃†', pinMarks:['●','●'], phase:-Math.PI/4 },
 };
 
 // ====================== オラクル工房の部品 ======================
@@ -477,6 +482,48 @@ function OW_CIPHER13(){
 }
 // L13ターゲット: 64次元。ブロック・Dが0の鍵状態のみ非ゼロ。鍵01(=index16)だけ−0.5、他+0.5
 const T13c = (() => { const t = new Array(64).fill(0); t[0] = 0.5; t[16] = -0.5; t[32] = 0.5; t[48] = 0.5; return t; })();
+
+// ====================== ショア（L14）：N=15 の素因数分解（a=7、周期r=4） ======================
+// 7量子ビット。数え上げ q0,q1,q2（値=q0*4+q1*2+q2、q2がLSB）／作業 q3,q4,q5,q6（q6がLSB、初期値|1⟩）。
+// c-U^(2^k)：数え上げビットの重み分だけ ×7 mod15 を繰り返す。N=15の特殊性で U=×7 は SWAP＋Xだけで作れる。
+// 逆QFTで数え上げレジスタを測定すると 0/2/4/6 が等確率 → m/8 の連分数から周期4 → gcd(7^2±1,15)=3,5。
+function OW_SHOR15(){
+  const g = []; let c = 0; const add = (t, q) => g.push({ t, q: q.slice(), c: c++ });
+  add('H', [0]); add('H', [1]); add('H', [2]);      // 数え上げレジスタを重ね合わせ
+  add('X', [6]);                                     // 作業レジスタ = |0001⟩ = 1
+  // ×7 mod15 を1回分（作業q3..q6に対する SWAP×3 → X×4）。制御は数え上げビット ctrl。
+  const uStep = ctrl => { add('CSWAP',[ctrl,4,3]); add('CSWAP',[ctrl,5,4]); add('CSWAP',[ctrl,6,5]);
+    add('CNOT',[ctrl,3]); add('CNOT',[ctrl,4]); add('CNOT',[ctrl,5]); add('CNOT',[ctrl,6]); };
+  uStep(2);                          // q2（重み1）→ U¹
+  uStep(1); uStep(1);                // q1（重み2）→ U²（=×4 mod15）
+  uStep(0); uStep(0); uStep(0); uStep(0);   // q0（重み4）→ U⁴（=I：Uを4回で元に戻る＝周期4）
+  // 逆QFT（q0=MSB, q2=LSB）：末尾のbit反転SWAP → H・制御位相を逆順・逆符号で
+  add('SWAP', [0,2]);
+  add('H', [2]);
+  add('CP2', [2,1]); add('H', [1]);
+  add('CP3', [2,0]); add('CP2', [1,0]); add('H', [0]);
+  return g;
+}
+// ショア測定分布（数え上げ3ビット, 値0..7）を複素状態から求める
+function shorCountDist(re, im){
+  const n = 7, dist = new Array(8).fill(0);
+  for (let i = 0; i < (1 << n); i++){
+    const p = re[i] * re[i] + im[i] * im[i];
+    if (p < 1e-12) continue;
+    const cv = ((i >> (n - 1)) & 1) * 4 + ((i >> (n - 2)) & 1) * 2 + ((i >> (n - 3)) & 1);
+    dist[cv] += p;
+  }
+  return dist;
+}
+// m/8 を連分数展開して分母（周期候補, <15）を返す
+function shorPeriodFromMeasure(m){
+  if (m === 0) return null;
+  let num = m, den = 8;               // m/8 を約分
+  const gcd = (a, b) => b ? gcd(b, a % b) : a;
+  const gg = gcd(num, den); num /= gg; den /= gg;
+  return den;                          // 既約分母＝周期候補
+}
+let shorHist = new Array(8).fill(0), shorMeasures = 0, shorFound = false;
 
 // ステージ9で選べる暗号文C（既定は01）。かき混ぜSは 00→01→10→11→00 の巡回（＋1）
 let stage9C = 0b01;
@@ -738,6 +785,27 @@ const LEVELS = [
       { who:'cat', img:'cat', text:'そう。暗号がどれだけ複雑になっても、オラクルは「前向きに暗号化して比べる」だけ。検証してごらん——合格する鍵01だけに印がつくよ。' },
     ],
   },
+  {
+    name: "ショアのアルゴリズム：15を素因数分解する",
+    label: "LEVEL 14", shortName: "ショア",
+    desc: "グローバーとは別系統の量子アルゴリズム——ショアの素因数分解の実回路です。15を割るには「7を何回かけると1に戻るか（＝7の位数r）」を求めれば十分で、これは掛け算の周期を探す問題です。数え上げレジスタ3本（q0〜q2）と作業レジスタ4本（q3〜q6）に、H×3 → 作業を|1⟩に → 制御付き「×7 mod15」を重み分（1回・2回・4回）→ 逆QFT、の約60ゲートが配線済み。「▶ 回路を通して測定」で数え上げレジスタを測ると、0・2・4・6が等確率で出ます。「✓ 周期を求めて素因数分解」で m/8 の連分数から周期r=4を割り出し、15=3×5へ。",
+    qlink: "グローバーが「総当たりを√Nに縮める探索」なら、ショアは「周期（位数）を一発で見抜く」まったく別の道具です。鍵は<strong>逆QFT（量子フーリエ変換の逆）</strong>——数え上げレジスタが Σ_x |x⟩|7ˣ mod15⟩ という「xについて周期rで繰り返す状態」になっているとき、逆QFTはその周期を、測定値が r の倍数間隔（ここでは 8/r=2 の倍数＝0,2,4,6）に山を作る形へ変換します。測定値 m から m/8 を連分数展開すると分母に周期rが現れ（2/8=1/4→r=4、6/8=3/4→r=4）、rが偶数なら gcd(7^{r/2}±1, 15)=gcd(48,15)=3・gcd(50,15)=5 と<strong>古典計算だけで</strong>約数が出ます。<br><br>この回路の「×7 mod15」は、N=15 が 2⁴−1 という特殊な数なので SWAP（線の入れ替え）とX だけで作れています。逆QFTの R₂†・R₃† は −π/2・−π/4 の制御位相回転で、ここで初めて<strong>複素の位相</strong>（矢印の回転）が本質的に効きます。RSA暗号を破るような大きなNでは、この「掛け算の周期を量子で求める」部分だけが指数的に速く、残りは連分数などの古典計算です。ただし実用規模には誤り訂正済みの論理量子ビットが多数必要で、まだ実現していません。",
+    qubits: 7, labels: ["q0","q1","q2","q3","q4","q5","q6"], gates: [],
+    canvasW: 6600,
+    mode: "shor",
+    presetWired: true,
+    preset: OW_SHOR15, solution: OW_SHOR15,
+    goalHTML: "：配線済みのショア回路を「▶ 回路を通して測定」で確かめること。数え上げレジスタ（q0q1q2）の測定値は <strong>0・2・4・6</strong> が等確率で出ます。「✓ 周期を求めて素因数分解」で m/8 の連分数から周期 r=4 を求め、15=3×5 にたどり着きます。",
+    dialogue: [
+      { who:'rabbit', img:'rabbitThink', text:'グローバーは「総当たりを速くする」道具でした。素因数分解のショアも、同じように候補（約数）を1つずつ試すんですか？' },
+      { who:'cat', img:'cat', text:'いや、ショアはまったく別の考え方だよ。15を割るのに、約数を探すんじゃない。「7を何回かけると1に戻るか」——掛け算の<strong>周期</strong>を求めるんだ。7¹=7, 7²=4, 7³=13, 7⁴=1（mod15）……4回で戻る。この周期4さえ分かれば、あとは古典計算で約数が出る。' },
+      { who:'rabbit', img:'rabbit', text:'周期を求めるのに、量子はどう効くんでしょう。' },
+      { who:'cat', img:'catThink', text:'数え上げレジスタを重ね合わせて、「xに応じて7をx回かける」を一気にやると、Σ_x |x⟩|7ˣ mod15⟩ という、xについて周期4で繰り返す状態ができる。その周期を読み取る道具が<strong>逆QFT</strong>だ。ここで初めて、矢印の“回転”＝複素の位相が本質的に効いてくる。' },
+      { who:'rabbit', img:'rabbitThink', text:'グローバーは矢印の向き（＋−）だけでしたが、ショアは矢印を回すんですね。通して測ると、何が出るんですか？' },
+      { who:'cat', img:'cat', text:'0・2・4・6が等確率で出る。たとえば6が出たら 6/8=3/4、その分母4が周期だ。周期4は偶数だから gcd(7²−1,15)=gcd(48,15)=3、gcd(7²+1,15)=gcd(50,15)=5——15=3×5。通して、測って、素因数分解までやってごらん。' },
+      { who:'rabbit', img:'rabbit', text:'「×7 mod15」がSWAPとXだけで組めているのも面白いです。周期を見抜く逆QFTが、量子コンピュータが古典より速く素因数分解できる正体なんですね。' },
+    ],
+  },
 ];
 
 // ====================== 状態 ======================
@@ -771,13 +839,13 @@ function startGame(){
   document.getElementById('game-screen').style.display = 'flex';
   window.scrollTo(0, 0);
   document.getElementById('app-shell').classList.add('game-mode');
-  const loop = LV().mode === 'loop';
-  document.getElementById('gate-bar').style.display = loop ? 'none' : 'flex';
-  document.getElementById('runBtn').style.display = loop ? 'none' : '';
-  document.getElementById('answerBtn').style.display = loop ? 'none' : '';
+  const observe = LV().mode === 'loop' || LV().mode === 'shor';   // 配線済み観察レベル（自分で組まない）
+  document.getElementById('gate-bar').style.display = observe ? 'none' : 'flex';
+  document.getElementById('runBtn').style.display = observe ? 'none' : '';
+  document.getElementById('answerBtn').style.display = observe ? 'none' : '';
   document.getElementById('cipherSel').style.display = LV().pickCipher ? 'flex' : 'none';
   if (LV().pickCipher) buildCipherSel();
-  if (!loop) buildGateBar();
+  if (!observe) buildGateBar();
   resetCircuit();
 }
 
@@ -958,6 +1026,8 @@ function resetCircuit(skipPreset){
     loopState = null;
     loopK = 0;
   }
+  // ショアレベル：測定ヒストグラムと周期発見フラグをリセット
+  if (lv.mode === 'shor'){ shorHist = new Array(8).fill(0); shorMeasures = 0; shorFound = false; }
   // 途中まで組んだ回路を最初から配置するレベル（関数なら都度生成。loop/presetWiredは出力まで配線済みにする）
   const pre = typeof lv.preset === 'function' ? lv.preset() : lv.preset;
   if (pre && !skipPreset) buildGateChain(pre, lv.mode === 'loop' || lv.presetWired);
@@ -1150,6 +1220,13 @@ function applyGate(s, type, qs, n){
   } else if (type === 'MCZ'){
     const cm = qs.reduce((m, q) => m | maskOf(q, n), 0);
     for (let i = 0; i < N; i++) if ((i & cm) === cm) s[i] = -s[i];
+  } else if (type === 'SWAP'){
+    // (a=1,b=0) の状態だけを (a=0,b=1) の相手と交換する（片側だけが条件成立するので二重交換なし）
+    const ma = maskOf(qs[0], n), mb = maskOf(qs[1], n);
+    for (let i = 0; i < N; i++){ if ((i & ma) && !(i & mb)){ const j = (i ^ ma) | mb; const t = s[i]; s[i] = s[j]; s[j] = t; } }
+  } else if (type === 'CSWAP'){
+    const mc = maskOf(qs[0], n), ma = maskOf(qs[1], n), mb = maskOf(qs[2], n);
+    for (let i = 0; i < N; i++){ if ((i & mc) && (i & ma) && !(i & mb)){ const j = (i ^ ma) | mb; const t = s[i]; s[i] = s[j]; s[j] = t; } }
   } else if (type === 'ORACLE'){
     // 封印された判定回路：ピンに入った3ビットが隠し鍵と一致した候補の矢印だけ反転
     for (let i = 0; i < N; i++){
@@ -1161,6 +1238,106 @@ function applyGate(s, type, qs, n){
       if (match) s[i] = -s[i];
     }
   }
+}
+
+// ====================== 複素振幅シミュレータ（ショア＝逆QFTに複素位相が必要） ======================
+// 実振幅の applyGate と同じ置換・反転を re/im 両方に施し、位相ゲート(CP2/CP3)だけ複素で処理する。
+function applyGateC(re, im, type, qs, n){
+  const N = re.length;
+  const swap2 = (i, j) => { let t = re[i]; re[i] = re[j]; re[j] = t; t = im[i]; im[i] = im[j]; im[j] = t; };
+  const neg = i => { re[i] = -re[i]; im[i] = -im[i]; };
+  if (type === 'X'){
+    const m = maskOf(qs[0], n);
+    for (let i = 0; i < N; i++) if (!(i & m)) swap2(i, i | m);
+  } else if (type === 'Z'){
+    const m = maskOf(qs[0], n);
+    for (let i = 0; i < N; i++) if (i & m) neg(i);
+  } else if (type === 'H'){
+    const m = maskOf(qs[0], n), r = Math.SQRT1_2;
+    for (let i = 0; i < N; i++) if (!(i & m)){
+      const j = i | m, ar = re[i], ai = im[i], br = re[j], bi = im[j];
+      re[i] = (ar + br) * r; im[i] = (ai + bi) * r; re[j] = (ar - br) * r; im[j] = (ai - bi) * r;
+    }
+  } else if (type === 'CNOT'){
+    const mc = maskOf(qs[0], n), mt = maskOf(qs[1], n);
+    for (let i = 0; i < N; i++) if ((i & mc) && !(i & mt)) swap2(i, i | mt);
+  } else if (type === 'CCX'){
+    const m1 = maskOf(qs[0], n), m2 = maskOf(qs[1], n), mt = maskOf(qs[2], n);
+    for (let i = 0; i < N; i++) if ((i & m1) && (i & m2) && !(i & mt)) swap2(i, i | mt);
+  } else if (type === 'CCCX'){
+    const m1 = maskOf(qs[0], n), m2 = maskOf(qs[1], n), m3 = maskOf(qs[2], n), mt = maskOf(qs[3], n);
+    for (let i = 0; i < N; i++) if ((i & m1) && (i & m2) && (i & m3) && !(i & mt)) swap2(i, i | mt);
+  } else if (type === 'MCX'){
+    const cm = qs.slice(0, -1).reduce((m, q) => m | maskOf(q, n), 0), mt = maskOf(qs[qs.length - 1], n);
+    for (let i = 0; i < N; i++) if ((i & cm) === cm && !(i & mt)) swap2(i, i | mt);
+  } else if (type === 'CCZ'){
+    const m1 = maskOf(qs[0], n), m2 = maskOf(qs[1], n), m3 = maskOf(qs[2], n);
+    for (let i = 0; i < N; i++) if ((i & m1) && (i & m2) && (i & m3)) neg(i);
+  } else if (type === 'CZ'){
+    const m1 = maskOf(qs[0], n), m2 = maskOf(qs[1], n);
+    for (let i = 0; i < N; i++) if ((i & m1) && (i & m2)) neg(i);
+  } else if (type === 'MCZ'){
+    const cm = qs.reduce((m, q) => m | maskOf(q, n), 0);
+    for (let i = 0; i < N; i++) if ((i & cm) === cm) neg(i);
+  } else if (type === 'SWAP'){
+    const ma = maskOf(qs[0], n), mb = maskOf(qs[1], n);
+    for (let i = 0; i < N; i++) if ((i & ma) && !(i & mb)) swap2(i, (i ^ ma) | mb);
+  } else if (type === 'CSWAP'){
+    const mc = maskOf(qs[0], n), ma = maskOf(qs[1], n), mb = maskOf(qs[2], n);
+    for (let i = 0; i < N; i++) if ((i & mc) && (i & ma) && !(i & mb)) swap2(i, (i ^ ma) | mb);
+  } else if (type === 'CP2' || type === 'CP3'){
+    // 制御位相：両方1のとき e^{iθ} を掛ける（θはGATESPECのphase）
+    const theta = GATESPEC[type].phase, cs = Math.cos(theta), sn = Math.sin(theta);
+    const ma = maskOf(qs[0], n), mb = maskOf(qs[1], n);
+    for (let i = 0; i < N; i++) if ((i & ma) && (i & mb)){ const r0 = re[i], i0 = im[i]; re[i] = r0 * cs - i0 * sn; im[i] = r0 * sn + i0 * cs; }
+  }
+}
+
+// 配線グラフを解析して複素状態ベクトルを流す（evalCircuitと同じ規則。ショア専用）。
+// 返り値 {re, im}（perm=恒等前提。未完成なら null）
+function evalCircuitComplex(inputIdx){
+  const lv = LV(), n = lv.qubits;
+  const isFloating = nd => (nd.type === 'INPUT' || nd.type === 'OUTPUT') ? false
+    : ![...nd.inPins, ...nd.outPins].some(p => wireTo(p) || wireFrom(p));
+  for (const nd of nodes){
+    if (nd.type === 'INPUT'){ if (!wireFrom(nd.outPins[0])) return null; }
+    else if (nd.type === 'OUTPUT'){ if (!wireTo(nd.inPins[0])) return null; }
+    else if (!isFloating(nd)){
+      for (const p of nd.inPins) if (!wireTo(p)) return null;
+      for (const p of nd.outPins) if (!wireFrom(p)) return null;
+    }
+  }
+  const gq = new Map();
+  for (const inp of nodes.filter(x => x.type === 'INPUT')){
+    let w = wireFrom(inp.outPins[0]), guard = 0;
+    while (w){
+      if (++guard > 3000) return null;
+      const pin = getPin(w.toPin), nd = getNode(pin.nodeId);
+      if (nd.type === 'OUTPUT') break;
+      if (!gq.has(nd.id)) gq.set(nd.id, []);
+      gq.get(nd.id)[pin.index] = inp.qidx;
+      w = wireFrom(nd.outPins[pin.index]);
+    }
+  }
+  const gates = nodes.filter(x => x.type !== 'INPUT' && x.type !== 'OUTPUT' && !isFloating(x));
+  const indeg = new Map(), children = new Map();
+  gates.forEach(g => { indeg.set(g.id, 0); children.set(g.id, []); });
+  for (const g of gates) for (const pid of g.inPins){
+    const src = getNode(getPin(wireTo(pid).fromPin).nodeId);
+    if (src.type !== 'INPUT'){ indeg.set(g.id, indeg.get(g.id) + 1); children.get(src.id).push(g.id); }
+  }
+  const queue = gates.filter(g => indeg.get(g.id) === 0).map(g => g.id);
+  const order = [];
+  while (queue.length){
+    const gid = queue.shift(); order.push(gid);
+    for (const cid of children.get(gid)){ indeg.set(cid, indeg.get(cid) - 1); if (indeg.get(cid) === 0) queue.push(cid); }
+  }
+  if (order.length !== gates.length) return null;
+  const N = 1 << n;
+  const re = new Float64Array(N), im = new Float64Array(N);
+  re[inputIdx] = 1;
+  for (const gid of order) applyGateC(re, im, getNode(gid).type, gq.get(gid) || [], n);
+  return { re, im };
 }
 
 // ====================== ビット追跡（選んだ候補に至るラインの0/1） ======================
@@ -1378,9 +1555,33 @@ function renderStatePanel(){
       <button class="btn" onclick="loopResetKey()">鍵を変えてやり直す</button>
     </div>`;
     document.getElementById('ampTable').innerHTML = html;
+    document.getElementById('measureBtn').style.display = '';
     drawLoopCanvas();
     return;
   }
+  if (lv.mode === 'shor'){
+    document.getElementById('measureBtn').style.display = 'none';   // 専用の測定ボタンを使う
+    document.getElementById('spInputNote').innerHTML =
+      '分解したい数 <strong>N=15</strong>／底 <strong>a=7</strong>（7ˣ mod 15 の周期を探します）<br>数え上げレジスタ q0q1q2（3ビット）・作業レジスタ q3〜q6（4ビット）。回路は配線済みです。';
+    const ev = evalCircuitComplex(0);
+    if (!ev){
+      document.getElementById('ampTable').innerHTML =
+        '<div class="sp-incomplete">配線が未完成です。<br>すべてのピンがつながると測定分布が出ます。</div>';
+      return;
+    }
+    let html = `<div id="loopStats">測定した回数：<strong>${shorMeasures}回</strong></div>`;
+    html += '<canvas id="shorCanvas" width="512" height="160" style="width:100%;background:#fff;border:1px solid #c9d2e4;border-radius:6px"></canvas>';
+    html += '<div class="sim-caption">数え上げレジスタ（q0q1q2）の測定分布。横軸＝測定値 0〜7。うすい枠＝理論値（0・2・4・6が各25%）、塗り＝実際に測定した回数の割合。</div>';
+    html += `<div class="loop-btns">
+      <button class="btn btn-p" onclick="shorMeasureOnce()">▶ 回路を通して測定</button>
+      <button class="btn" onclick="shorFactor()">✓ 周期を求めて素因数分解</button>
+      <button class="btn" onclick="resetCircuit()">やり直す</button>
+    </div>`;
+    document.getElementById('ampTable').innerHTML = html;
+    drawShorCanvas(shorCountDist(ev.re, ev.im));
+    return;
+  }
+  document.getElementById('measureBtn').style.display = '';
   const idx = panelInputIdx();
   const ev = evalCircuit(idx);
   document.getElementById('spInputNote').innerHTML = (lv.mode === 'unitary'
@@ -1590,7 +1791,7 @@ document.getElementById('measureBtn').addEventListener('click', () => {
 // ====================== 検証 ======================
 document.getElementById('runBtn').addEventListener('click', () => {
   const lv = LV(), n = lv.qubits;
-  if (lv.mode === 'loop') return;   // 反復レベルは検証ボタンを使わない
+  if (lv.mode === 'loop' || lv.mode === 'shor') return;   // 観察レベルは専用ボタンを使う
   if (!evalCircuit(lv.input || 0)){
     showMsg(false, '配線が未完成です。すべてのピンをつないでから検証してください。');
     return;
@@ -1766,14 +1967,15 @@ function renderDialogue(dialogue){
 }
 
 const CLEAR_DIALOGUE_1 = [
-  { who:'cat',    img:'cat',        text:'ここまでの13レベルを並べ直してみよう。' },
+  { who:'cat',    img:'cat',        text:'ここまでの14レベルを並べ直してみよう。' },
   { who:'rabbit', img:'rabbit',     text:'前半は検算でした。CNOTで⊕、トフォリで「かつ」、X挟みとCCCXで一致判定——条件の成否をDに書く回路たちです。' },
   { who:'cat',    img:'catThink',   text:'そう。後半はそれをオラクルに仕上げた。DにZで印をつけ、逆計算でDを返す。そして最後は、答えを知らない条件から組んで、グローバーで答えを引き出したね。まとめると——' },
 ];
 const CLEAR_DIALOGUE_2 = [
   { who:'rabbit', img:'rabbitThink', text:'量子回路クエストでは、オラクルは鍵を知って組むように見えていました。でも本当は、条件を配線に翻訳しただけで、答えはどこにも書いていなかったんですね。' },
   { who:'cat',    img:'cat',        text:'そう。オラクルは「条件のコンパイル結果」で、答えは条件が勝手に選ぶ。AESの鍵探索のオラクルも、桁違いに大きいだけで、作り方はこの3工程と同じだよ。' },
-  { who:'rabbit', img:'rabbit',     text:'検算・印つけ・逆計算……グローバーの心臓部を、部品の1個まで自分の手で組めるようになりました。' },
+  { who:'rabbit', img:'rabbit',     text:'検算・印つけ・逆計算……グローバーの心臓部を、部品の1個まで自分の手で組めるようになりました。最後のショアは、探索じゃなくて周期を見抜く別系統でしたね。' },
+  { who:'cat',    img:'cat',        text:'そう。グローバーは矢印の向き（＋−）で答えを引き寄せ、ショアは矢印を回す逆QFTで周期を炙り出す。道具は違っても、回路を「配線とゲート」で読む目は同じだよ。' },
   { who:'cat',    img:'catThink',   text:'それが分かれば、量子アルゴリズムの回路図はもう怖くない。おつかれさま。' },
 ];
 
@@ -1794,6 +1996,7 @@ function showClearScreen(){
     '10ビット印つけ → 1024本のうち鍵の1本だけが左を向く（でも測定では見えない）<br>' +
     '10ビット×約25反復 → √Nの体感（1024候補が99.9%に。128ビットへの距離も）<br>' +
     '非線形・多ラウンドの暗号 → 逆算の公式がない＝本当に鍵を試すしかない（同じオラクル構成）<br>' +
+    'ショア（N=15, a=7）→ 制御付き×7 mod15 と逆QFTで周期r=4を求め、15=3×5（グローバーとは別系統）<br>' +
     '<strong>オラクル＝条件を回路にコンパイルしたもの。答えは条件が選ぶ</strong>' +
     '<hr style="margin:12px 0;border-color:rgba(0,0,0,.15)">' +
     '<small>実際のAES鍵探索のオラクルも、暗号化の全手順（数万ゲート規模）を同じ3工程' +
@@ -1977,6 +2180,78 @@ function drawLoopCanvas(){
   }
   ctx.fillStyle = '#8a97b8';
   ctx.fillRect(0, mid, 1024, 1);
+}
+
+// ====================== ショア（測定・素因数分解） ======================
+function igcd(a, b){ return b ? igcd(b, a % b) : a; }
+function drawShorCanvas(dist){
+  const c = document.getElementById('shorCanvas');
+  if (!c) return;
+  const ctx = c.getContext('2d');
+  ctx.clearRect(0, 0, 512, 160);
+  const base = 128, top = 12, bw = 44, gap = (512 - 8 * bw) / 9;
+  const tot = shorMeasures || 0;
+  for (let v = 0; v < 8; v++){
+    const x = gap + v * (bw + gap);
+    // 理論値の枠
+    const th = dist[v] * (base - top);
+    ctx.strokeStyle = '#b9a3e0'; ctx.lineWidth = 1.5;
+    ctx.strokeRect(x, base - th, bw, th);
+    // 実測の塗り
+    if (tot > 0){
+      const obs = shorHist[v] / tot;
+      const oh = obs * (base - top);
+      ctx.fillStyle = (v % 2 === 0) ? '#8a5ac4' : '#c0483a';
+      ctx.fillRect(x, base - oh, bw, oh);
+    }
+    // ラベル
+    ctx.fillStyle = '#1b2340'; ctx.font = 'bold 13px ui-monospace,monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(String(v), x + bw / 2, base + 16);
+    ctx.fillStyle = '#8a97b8'; ctx.font = '10px ui-monospace,monospace';
+    ctx.fillText(v.toString(2).padStart(3, '0'), x + bw / 2, base + 30);
+  }
+  ctx.strokeStyle = '#8a97b8'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, base); ctx.lineTo(512, base); ctx.stroke();
+}
+function shorMeasureOnce(){
+  const ev = evalCircuitComplex(0);
+  const el = document.getElementById('measureResult');
+  if (!ev){ el.textContent = '配線が未完成のため測定できません。'; return; }
+  const dist = shorCountDist(ev.re, ev.im);
+  // 分布からサンプリング
+  let r = Math.random(), acc = 0, m = 0;
+  for (let v = 0; v < 8; v++){ acc += dist[v]; if (r <= acc){ m = v; break; } }
+  shorHist[m]++; shorMeasures++;
+  const rr = shorPeriodFromMeasure(m);
+  let note;
+  if (m === 0) note = `測定値 <strong>m=0</strong>（000）→ ${0}/8。分母が出ないので周期の情報なし——もう一度どうぞ（0はときどき出ます）。`;
+  else note = `測定値 <strong>m=${m}</strong>（${m.toString(2).padStart(3,'0')}）→ ${m}/8 を約分して <strong>${m/igcd(m,8)}/${8/igcd(m,8)}</strong>。分母 <strong>${rr}</strong> が周期の候補です。`
+    + (rr === 4 ? '（＝7の位数r=4！）' : (rr === 2 ? '（周期4の約数。2/8や6/8が出ればr=4と確定できます）' : ''));
+  el.innerHTML = note;
+  renderStatePanel();
+}
+function shorFactor(){
+  const ev = evalCircuitComplex(0);
+  const el = document.getElementById('measureResult');
+  if (!ev){ el.textContent = '配線が未完成のため素因数分解できません。'; return; }
+  const dist = shorCountDist(ev.re, ev.im);
+  const ok = [0,2,4,6].every(v => Math.abs(dist[v] - 0.25) < 0.03) && [1,3,5,7].every(v => dist[v] < 0.03);
+  if (!ok){ el.innerHTML = '回路が想定の分布（0・2・4・6が各25%）になっていません。「やり直す」で戻せます。'; return; }
+  const a = 7, Nn = 15, r = 4;                 // 測定値2/6の連分数から周期r=4が得られる
+  const half = Math.pow(a, r / 2);             // 7^2 = 49
+  const f1 = igcd(half - 1, Nn), f2 = igcd(half + 1, Nn);   // gcd(48,15)=3, gcd(50,15)=5
+  el.innerHTML =
+    `測定値 0・2・4・6 のうち <strong>2</strong> や <strong>6</strong> を連分数展開すると分母は4——これが 7 の周期（位数）<strong>r=4</strong>。<br>`
+    + `rが偶数なので、7^(r/2)=7²=49 として<br>`
+    + `　gcd(49−1, 15)=gcd(48,15)=<strong>${f1}</strong>、gcd(49+1, 15)=gcd(50,15)=<strong>${f2}</strong>。<br>`
+    + `よって <strong style="color:#1aa85a">15 = ${f1} × ${f2}</strong> 🎉　量子で周期を求め、古典計算で約数を取り出しました。`;
+  if (!cleared.includes(currentLevelIdx)){
+    cleared.push(currentLevelIdx);
+    localStorage.setItem('oracle_workshop_cleared', JSON.stringify(cleared));
+    buildLevelList();
+  }
+  showNextBtn();
 }
 
 // ====================== 起動 ======================
