@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>オラクル工房 ― オラクルからグローバー、ショアまで組む</title>
 <meta name="description" content="鍵101のオラクルとグローバーの探索から始めて、答えを知らない条件からのオラクル、封印オラクル、ミニ暗号の鍵探索、10ビット探索、そしてショアの素因数分解まで、実物の回路を配線して体験する無料学習ゲーム（全16レベル）。量子回路クエストの続編。">
-<link rel="canonical" href="https://ruglerugle.github.io/oracle-workshop/">
+<link rel="canonical" href="https://quantum-mechanics.habatakijuku.com/oracle-workshop/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="オラクル工房">
 <meta property="og:locale" content="ja_JP">
 <meta property="og:title" content="オラクル工房 ― オラクルからグローバー、ショアまで組む">
 <meta property="og:description" content="グローバーの探索から、答えを知らない条件からのオラクル、暗号の鍵探索、ショアの素因数分解まで、回路を自分で配線して体験する無料学習ゲーム。量子回路クエストの続編。">
-<meta property="og:url" content="https://ruglerugle.github.io/oracle-workshop/">
+<meta property="og:url" content="https://quantum-mechanics.habatakijuku.com/oracle-workshop/">
 <meta name="twitter:card" content="summary">
 <link rel="icon" href="images/favicon.png">
 <script type="application/ld+json">
@@ -20,7 +20,7 @@
   "@type": "LearningResource",
   "name": "オラクル工房",
   "description": "鍵101のオラクルとグローバーの探索から始めて、答えを知らない条件からのオラクル、封印オラクル、ミニ暗号の鍵探索、10ビット探索、そしてショアの素因数分解まで、実物の回路を配線して体験する無料学習ゲーム（全16レベル）。量子回路クエストの続編。",
-  "url": "https://ruglerugle.github.io/oracle-workshop/",
+  "url": "https://quantum-mechanics.habatakijuku.com/oracle-workshop/",
   "inLanguage": "ja",
   "learningResourceType": "learning activity",
   "teaches": "グローバーの探索の構成（オラクル・拡散・反復）、条件からのオラクル構成（検算・印つけ・逆計算）、封印オラクル、暗号の鍵探索、√N反復、ショアの周期発見",
@@ -370,7 +370,7 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
         </div>
         <div class="ending-links">
           <a class="ending-link share" href="https://x.com/intent/post?text=%E3%82%AA%E3%83%A9%E3%82%AF%E3%83%AB%E5%B7%A5%E6%88%BF%20%E5%85%A8%E3%83%AC%E3%83%99%E3%83%AB%E3%82%AF%E3%83%AA%E3%82%A2%EF%BC%81%E2%9A%99%20%E3%82%B0%E3%83%AD%E3%83%BC%E3%83%90%E3%83%BC%E3%81%AE%E3%82%AA%E3%83%A9%E3%82%AF%E3%83%AB%E3%82%92%E6%A4%9C%E7%AE%97%E5%9B%9E%E8%B7%AF%E3%81%8B%E3%82%89%E8%87%AA%E4%BD%9C%E3%81%A7%E3%81%8D%E3%82%8B%E7%84%A1%E6%96%99%E5%AD%A6%E7%BF%92%E3%82%B2%E3%83%BC%E3%83%A0&url=https%3A%2F%2Fruglerugle.github.io%2Foracle-workshop%2F" target="_blank" rel="noopener">𝕏 クリアを報告する</a>
-          <a class="ending-link" href="https://ruglerugle.github.io/quantum-circuit/" target="_blank" rel="noopener">⚛ 量子回路クエストへ</a>
+          <a class="ending-link" href="https://quantum-mechanics.habatakijuku.com/quantum-circuit/" target="_blank" rel="noopener">⚛ 量子回路クエストへ</a>
           <a class="ending-link" href="https://ruglerugle.github.io/grover-oracle/" target="_blank" rel="noopener">🔍 オラクルの旅へ</a>
         </div>
       </div>
@@ -665,7 +665,7 @@ const LEVELS = [
     canvasW: 660,
     mode: "state", target: T13,
     dialogue: [
-      { who:'cat', img:'cat', text:'ようこそ、オラクル工房へ。<a href="https://ruglerugle.github.io/quantum-circuit/" target="_blank" rel="noopener">量子回路クエスト</a>でオラクルの部品――判定ビット・検算・印つけ・逆計算――を全部そろえたね。ここからは、その部品でグローバーの鍵探索を組んで動かす。探す鍵は101。まずはオラクル――鍵の候補にだけ印をつける回路を、いちばん短い形で組もう。' },
+      { who:'cat', img:'cat', text:'ようこそ、オラクル工房へ。<a href="https://quantum-mechanics.habatakijuku.com/quantum-circuit/" target="_blank" rel="noopener">量子回路クエスト</a>でオラクルの部品――判定ビット・検算・印つけ・逆計算――を全部そろえたね。ここからは、その部品でグローバーの鍵探索を組んで動かす。探す鍵は101。まずはオラクル――鍵の候補にだけ印をつける回路を、いちばん短い形で組もう。' },
       { who:'rabbit', img:'rabbit', text:'復習します。オラクルは「入力が鍵と一致したときだけ矢印を反転する」固定の回路で、多重制御Zで作れるんでしたね。' },
       { who:'cat', img:'catThink', text:'そう。今回は<strong>CCZ</strong>——3つ全部が1のときだけ矢印を反転するゲートを使う。ただし鍵101は真ん中が0だね。CCZをそのまま置くと、印がつくのは|111⟩になってしまう。' },
       { who:'rabbit', img:'rabbitThink', text:'量子回路クエストの一致検算でやった手ですね。Bを先にXで反転しておけば、101のときだけ「全部1」になってCCZが効きます。CCZのあとにもう一度Xで戻せば、B自体は元どおりです。' },
