@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>オラクル工房 ― 検算回路から作るグローバーのオラクル</title>
-<meta name="description" content="グローバーのオラクルの中身を、検算（CNOT・トフォリ・多重制御X）→ 印つけ（Z）→ 逆計算の3工程で自作する無料の量子回路学習ゲーム。答えを知らない条件からオラクルを組み、1反復で確率100%の探索まで体験できます。">
+<title>オラクル工房 ― オラクルからグローバー、ショアまで組む</title>
+<meta name="description" content="鍵101のオラクルとグローバーの探索から始めて、答えを知らない条件からのオラクル、封印オラクル、ミニ暗号の鍵探索、10ビット探索、そしてショアの素因数分解まで、実物の回路を配線して体験する無料学習ゲーム（全12レベル）。量子回路クエストの続編。">
 <link rel="canonical" href="https://ruglerugle.github.io/oracle-workshop/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="オラクル工房">
 <meta property="og:locale" content="ja_JP">
-<meta property="og:title" content="オラクル工房 ― 検算回路から作るグローバーのオラクル">
-<meta property="og:description" content="オラクルの中身（検算・印つけ・逆計算）を部品から自作し、答えを知らない条件から量子探索を完成させる無料学習ゲーム。">
+<meta property="og:title" content="オラクル工房 ― オラクルからグローバー、ショアまで組む">
+<meta property="og:description" content="グローバーの探索から、答えを知らない条件からのオラクル、暗号の鍵探索、ショアの素因数分解まで、回路を自分で配線して体験する無料学習ゲーム。量子回路クエストの続編。">
 <meta property="og:url" content="https://ruglerugle.github.io/oracle-workshop/">
 <meta name="twitter:card" content="summary">
 <link rel="icon" href="images/favicon.png">
@@ -19,11 +19,11 @@
   "@context": "https://schema.org",
   "@type": "LearningResource",
   "name": "オラクル工房",
-  "description": "グローバーのオラクルの中身を、検算（CNOT・トフォリ・多重制御X）→ 印つけ（Z）→ 逆計算の3工程で自作する無料の量子回路学習ゲーム。答えを知らない条件からオラクルを組み、1反復で確率100%の探索まで体験できます。",
+  "description": "鍵101のオラクルとグローバーの探索から始めて、答えを知らない条件からのオラクル、封印オラクル、ミニ暗号の鍵探索、10ビット探索、そしてショアの素因数分解まで、実物の回路を配線して体験する無料学習ゲーム（全12レベル）。量子回路クエストの続編。",
   "url": "https://ruglerugle.github.io/oracle-workshop/",
   "inLanguage": "ja",
   "learningResourceType": "learning activity",
-  "teaches": "グローバーのオラクルの構成（判定ビット・検算回路・多重制御X・位相の印つけ・補助ビットと逆計算・複数解の探索・ミニ暗号の鍵検算）",
+  "teaches": "グローバーの探索の構成（オラクル・拡散・反復）、条件からのオラクル構成（検算・印つけ・逆計算）、封印オラクル、暗号の鍵探索、√N反復、ショアの周期発見",
   "isAccessibleForFree": true,
   "author": { "@type": "Person", "name": "ruglerugle" }
 }
@@ -120,6 +120,11 @@ a.head-btn{text-decoration:none;display:inline-flex;align-items:center;justify-c
 .goal-box th{background:#f4e9c8;font-family:inherit}
 .goal-box .goal-note{font-size:12px;color:#7a6320;font-weight:750}
 .q-link-box strong{color:#12245e}
+.gm-box{background:#fbf6ea;border:1px solid #d9c9a0;border-left:4px solid #b98a2e;border-radius:6px;padding:10px 13px;margin:12px 0;color:#3a2f16}
+.gm-box .gm-title{font-size:13px;font-weight:800;color:#5a4416;margin-bottom:4px}
+.gm-box svg{display:block;width:100%;max-width:400px;margin:4px auto 0;font-family:system-ui,-apple-system,"Hiragino Sans","Yu Gothic",sans-serif}
+.gm-box .gm-note{font-size:12px;color:#5c503a;line-height:1.7;margin-top:6px}
+.gm-box .gm-note a{color:#8a5a2a;text-decoration:underline}
 .intro-actions{display:flex;justify-content:flex-end;margin-top:16px;gap:10px}
 .book-recommend-box{margin:12px 0;background:#f6f4ee;border:1px solid rgba(0,0,0,.13);border-radius:10px;padding:10px 14px}
 .book-recommend-label{display:inline-block;font-size:10px;font-weight:900;color:#888;border:1px solid #aaa;border-radius:4px;padding:0 4px;margin:0 0 6px}
@@ -285,7 +290,7 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
   <header class="game-header">
     <div>
       <h1 class="brand-title">オラクル工房</h1>
-      <div class="brand-sub">検算・印つけ・逆計算でオラクルを自作する</div>
+      <div class="brand-sub">オラクルからグローバー、ショアまで組む</div>
     </div>
     <div>
       <div class="chapter-title">
@@ -320,6 +325,7 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
         <div id="goal-area"></div>
         <div class="dialog-scene" id="dialog-scene"></div>
         <div id="q-link-area"></div>
+        <div id="gate-matrix-area"></div>
         <div class="intro-actions">
           <button class="btn btn-p" onclick="startGame()">⚛ 回路を組む</button>
         </div>
@@ -339,7 +345,7 @@ button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
           <span class="ch-title">🎉 COMPLETE</span>
           <span class="ch-heading">全レベルクリア！</span>
         </div>
-        <p class="game-intro">おめでとうございます。CNOT1個の判定ビットから始めて、答えを知らない条件から作ったオラクルで、グローバー探索を完走しました。</p>
+        <p class="game-intro">おめでとうございます。鍵101のオラクルから始めて、グローバーの探索、答えを知らない条件からのオラクル、ミニ暗号、10ビットの鍵探索、そしてショアの素因数分解まで完走しました。</p>
         <div class="dialog-scene" id="clear-dialog-1"></div>
         <div class="q-link-box" id="clear-flow-box"></div>
         <div class="dialog-scene" id="clear-dialog-2"></div>
@@ -554,119 +560,130 @@ function stage9Target(){
 }
 function bits2(x){ return x.toString(2).padStart(2, '0'); }
 
+// ====================== グローバー章の部品 ======================
+// 鍵は101（q0=A が最上位）。振幅の目標値（実数）
+const G1N = -1 / (2 * Math.sqrt(8));          // 1反復後の非鍵 −0.177
+const G1K = -5 / (2 * Math.sqrt(8));          // 1反復後の鍵 −0.884
+const G2N = -1 / (4 * Math.sqrt(8));          // 2反復後の非鍵 −0.088
+const G2K = 11 / (4 * Math.sqrt(8));          // 2反復後の鍵 0.972
+const T13 = [A8, A8, A8, A8, A8, -A8, A8, A8];
+const T14 = [G1N, G1N, G1N, G1N, G1N, G1K, G1N, G1N];
+const T15 = [G2N, G2N, G2N, G2N, G2N, G2K, G2N, G2N];
+// 回路部品（solution/preset用）
+const GV_H3 = c => [ {t:'H',q:[0],c}, {t:'H',q:[1],c}, {t:'H',q:[2],c} ];
+const GV_X3 = c => [ {t:'X',q:[0],c}, {t:'X',q:[1],c}, {t:'X',q:[2],c} ];
+const GV_ORACLE = c => [ {t:'X',q:[1],c:c}, {t:'CCZ',q:[0,1,2],c:c+1}, {t:'X',q:[1],c:c+2} ];
+const GV_DIFF = c => [ ...GV_H3(c), ...GV_X3(c+1), {t:'CCZ',q:[0,1,2],c:c+2}, ...GV_X3(c+3), ...GV_H3(c+4) ];
+const GV_L13 = [ ...GV_H3(0), ...GV_ORACLE(1) ];
+const GV_L14 = [ ...GV_L13, ...GV_DIFF(4) ];
+const GV_L15 = [ ...GV_L14, ...GV_ORACLE(9), ...GV_DIFF(12) ];
+// L16: 封印オラクル（鍵はランダム）を使ったグローバー2反復
+const GV_L16 = [ ...GV_H3(0), {t:'ORACLE',q:[0,1,2],c:1}, ...GV_DIFF(2), {t:'ORACLE',q:[0,1,2],c:7}, ...GV_DIFF(8) ];
+
+/* ---- ゲートの「数の表」（行列）図。当て方の説明は量子コンピュータの旅に任せ、表そのものだけを見せる ---- */
+const GATE_MATRIX = {
+  X:    { title: 'X の表（2行2列）', n: 1, m: [[0,1],[1,0]], io: '(a, b) → (b, a)', note: '|0⟩ 行と |1⟩ 行の矢印を入れ替える表。' },
+  H:    { title: 'H の表（2行2列）', n: 1, scale: '0.71×', m: [[1,1],[1,-1]], io: '(a, b) → ((a＋b)×0.71,　(a−b)×0.71)', note: '和と差を作る表。−1 が1か所だけ入っている。' },
+  Z:    { title: 'Z の表（2行2列）', n: 1, m: [[1,0],[0,-1]], io: '(a, b) → (a, −b)', note: '|1⟩ 行の矢印だけ正反対にする表。長さは変えない。' },
+  CNOT: { title: 'CNOT の表（4行4列）', n: 2, m: [[1,0,0,0],[0,1,0,0],[0,0,0,1],[0,0,1,0]], io: '(a, b, c, d) → (a, b, d, c)', note: '上2行（A が 0）はそのまま、下2行（A が 1：|10⟩ と |11⟩）だけ入れ替え。「A が 1 なら B を反転」は、この 1 の置き場所を言葉にしたもの。' },
+  CZ:   { title: 'CZ の表（4行4列）', n: 2, m: [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,-1]], io: '(a, b, c, d) → (a, b, c, −d)', note: '|11⟩ 行の矢印だけ正反対にする。ほかの3行はそのまま。' },
+  CCX:  { title: 'トフォリの表（8行8列）', n: 3, m: null, io: '(a, b, c, d, e, f, g, h) → (a, b, c, d, e, f, h, g)', note: 'A も B も 1 の行（|110⟩ と |111⟩）だけ入れ替え。ほかの6行はそのまま。' },
+  CCZ:  { title: 'CCZ の表（8行8列）', n: 3, m: null, io: '(a, b, c, d, e, f, g, h) → (a, b, c, d, e, f, g, −h)', note: '|111⟩ 行の矢印だけ正反対にする。ほかの7行はそのまま。' },
+  CCCX: { title: 'CCCX の表（16行16列）', n: 4, m: null, io: '16個の矢印のうち、最後の2つだけ入れ替え', note: 'A・B・C が全部 1 の行（|1110⟩ と |1111⟩）だけ入れ替え。ほかの14行はそのまま。制御が増えても「入れ替えが表の右下の2行に置いてあるだけ」という形は変わらない。' },
+};
+(function(){
+  const I = n => Array.from({length:n}, (_, r) => Array.from({length:n}, (_, c) => r === c ? 1 : 0));
+  const ccx = I(8); ccx[6][6] = 0; ccx[6][7] = 1; ccx[7][7] = 0; ccx[7][6] = 1; GATE_MATRIX.CCX.m = ccx;
+  const ccz = I(8); ccz[7][7] = -1; GATE_MATRIX.CCZ.m = ccz;
+  const cccx = I(16); cccx[14][14] = 0; cccx[14][15] = 1; cccx[15][15] = 0; cccx[15][14] = 1; GATE_MATRIX.CCCX.m = cccx;
+})();
+function gateMatrixHTML(key) {
+  const g = GATE_MATRIX[key]; if (!g) return '';
+  const N = g.m.length, cs = N > 8 ? 15 : (N > 4 ? 22 : (N > 2 ? 30 : 34)), fsL = N > 8 ? 6.5 : (N > 4 ? 8 : 9.5), fsV = N > 8 ? 8 : (N > 4 ? 10 : 12);
+  const labels = Array.from({length:N}, (_, i) => '|' + i.toString(2).padStart(g.n, '0') + '⟩');
+  const x0 = (N > 8 ? 52 : 62) + (g.scale ? 26 : 0), y0 = 30, W = 372, H = y0 + N * cs + 26;
+  const changed = g.m.map((row, r) => row.some((v, c) => v !== (r === c ? 1 : 0)));
+  let out = '';
+  labels.forEach((l, i) => { out += `<text x="${x0 + i * cs + cs / 2}" y="${y0 - 8}" text-anchor="middle" font-size="${fsL}" font-weight="700" fill="#6b6150">${l}</text>`; });
+  labels.forEach((l, i) => { out += `<text x="${x0 - 10}" y="${y0 + i * cs + cs / 2 + 4}" text-anchor="end" font-size="${fsL}" font-weight="800" fill="${changed[i] ? '#c8663f' : '#2f6fa6'}">${l}</text>`; });
+  out += `<path d="M${x0 - 2} ${y0} h-6 v${N * cs} h6" fill="none" stroke="#3a2f16" stroke-width="1.4"/><path d="M${x0 + N * cs + 2} ${y0} h6 v${N * cs} h-6" fill="none" stroke="#3a2f16" stroke-width="1.4"/>`;
+  if (g.scale) out += `<text x="${x0 - 14}" y="${y0 + N * cs / 2 + 4}" text-anchor="end" font-size="12" font-weight="900" fill="#3a2f16">${g.scale}</text>`;
+  g.m.forEach((row, r) => row.forEach((v, c) => {
+    const col = v === 0 ? '#9c9483' : (v < 0 ? '#c8433f' : (changed[r] ? '#c8663f' : '#2f6fa6'));
+    out += `<text x="${x0 + c * cs + cs / 2}" y="${y0 + r * cs + cs / 2 + 4}" text-anchor="middle" font-size="${fsV}" font-weight="900" fill="${col}" opacity="${v === 0 ? .4 : 1}">${v < 0 ? '−1' : v}</text>`;
+  }));
+  out += `<text x="${W / 2}" y="${H - 6}" text-anchor="middle" font-size="9.5" font-weight="700" fill="#6b6150">上：入力の行　左：新しい行（色つき＝変わる行）</text>`;
+  return `<div class="gm-box"><div class="gm-title">🧮 ${g.title}</div><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${g.title}。入力 ${g.io}">${out}</svg><div class="gm-note"><strong>${g.io}</strong><br>${g.note}　表の当て方（掛けて足す）は <a href="https://quantum-mechanics.habatakijuku.com/quantum-computer/stage2" target="_blank" rel="noopener">量子コンピューターの仕組み STAGE2</a> で。</div></div>`;
+}
+
 // ====================== レベル定義 ======================
 // qubits: 量子ビット数（上の行が q0）。基底状態の番号は q0 を最上位ビットとする。
 // mode 'state': input（省略時|0…0⟩）から target（実数振幅の配列）を作れたら合格
 // mode 'unitary': testInputs の各基底入力に対し targetMap(idx) の基底状態が出たら合格
 const LEVELS = [
   {
-    name: "判定ビット：条件をDに写す",
-    label: "LEVEL 1", shortName: "判定ビット",
-    desc: "補助ビット D は 0 で入力されます。条件「Aが1」の検算をします：CNOTを1個つないで（●＝制御をAの線に、⊕＝標的をDの線に）、「Aが1のときだけDが1になる」回路を作ってください。Aは変化させないこと。",
-    qlink: "オラクルの心臓部は検算（判定）です。判定の結果を、候補とは別の補助ビットに書くのは、可逆計算では答えで入力を上書きできないため。CNOTは「制御の値を⊕で足し込む」ゲートなので、0に足せば書き写しになります（任意の重ね合わせの複製＝クローンは不可能ですが、0/1の基底値をDに書き写すことは可能です）。この「条件の成否を1ビットに書く」工程が、オラクル作りのすべての出発点です。",
-    qubits: 2, labels: ["A","D"], gates: ["X","CNOT"],
-    mode: "unitary", testInputs: [0, 2],
-    targetMap: i => i | ((i >> 1) & 1),
+    name: "オラクル：鍵101に印をつける",
+    label: "LEVEL 1", shortName: "オラクル", matrix: "CCZ",
+    desc: "探す鍵は 101 です。まず A・B・C に H を1個ずつかけて8通りの候補すべてに0.35ずつの矢印を立て、その後ろに X → CCZ → X をつないで、鍵 |101⟩ の矢印だけを反転してください。X は真ん中のBの線に（鍵の0の桁）、CCZ は3本全部の線につなぎます。",
+    qlink: "オラクルは「候補が鍵と一致したときだけ矢印を反転する」固定の回路です。CCZ（3つ全部が1のときだけ矢印を反転する多重制御Z）と、鍵の0の桁をXで一時的に反転しておく組み合わせで、どんな鍵のオラクルも作れます。反転しても矢印の長さは変わらないので、印は測定の確率に一切現れません——見えない印（位相）だからこそ、このあとの干渉で利用できます。",
+    qubits: 3, labels: ["A","B","C"], gates: ["H","X","CCZ"],
+    canvasW: 660,
+    mode: "state", target: T13,
     dialogue: [
-      { who:'cat', img:'cat', text:'ようこそ、オラクル工房へ。<a href="https://ruglerugle.github.io/quantum-circuit/" target="_blank" rel="noopener">量子回路クエスト</a>の最後に渡した封印オラクル——今度はあの中身を、部品から自分で作っていくよ。土台になるのは<strong>検算</strong>。「候補が条件を満たすか」を調べて、結果を補助ビットDに書き込む工程だ。' },
-      { who:'rabbit', img:'rabbit', text:'判定の結果を、候補とは別の場所に書くんですね。' },
-      { who:'cat', img:'catThink', text:'そう。候補そのものを書き換えてしまうと、あとで元に戻せなくなるからね。まずはいちばん簡単な条件「Aが1」から。Aが1のときだけDが0から1になる回路を、CNOT1個で作ってごらん。' },
-      { who:'rabbit', img:'rabbitThink', text:'CNOTは「制御が1のときだけ標的を反転」でした。制御をA、標的をD（最初は0）にすれば、DにAの値がそのまま写る——これが判定ビットになるんですね。' },
+      { who:'cat', img:'cat', text:'ようこそ、オラクル工房へ。<a href="https://ruglerugle.github.io/quantum-circuit/" target="_blank" rel="noopener">量子回路クエスト</a>でオラクルの部品――判定ビット・検算・印つけ・逆計算――を全部そろえたね。ここからは、その部品でグローバーの鍵探索を組んで動かす。探す鍵は101。まずはオラクル――鍵の候補にだけ印をつける回路を、いちばん短い形で組もう。' },
+      { who:'rabbit', img:'rabbit', text:'復習します。オラクルは「入力が鍵と一致したときだけ矢印を反転する」固定の回路で、多重制御Zで作れるんでしたね。' },
+      { who:'cat', img:'catThink', text:'そう。今回は<strong>CCZ</strong>——3つ全部が1のときだけ矢印を反転するゲートを使う。ただし鍵101は真ん中が0だね。CCZをそのまま置くと、印がつくのは|111⟩になってしまう。' },
+      { who:'rabbit', img:'rabbitThink', text:'量子回路クエストの一致検算でやった手ですね。Bを先にXで反転しておけば、101のときだけ「全部1」になってCCZが効きます。CCZのあとにもう一度Xで戻せば、B自体は元どおりです。' },
+      { who:'cat', img:'cat', text:'その通り。先にHを3つ置いて8本の矢印を立ててから、その印つけをつないでごらん。' },
+      { who:'rabbit', img:'rabbit', text:'印がついても長さは全部0.35のまま……測定の確率は8分の1ずつで変わらないんですよね。この見えない印をどう使うのか。' },
     ],
-    solution: [ {t:'CNOT', q:[0,1], c:1} ],
+    solution: GV_L13,
   },
   {
-    name: "⊕の検算：AとBが違う",
-    label: "LEVEL 2", shortName: "XOR検算",
-    desc: "条件「AとBが違う（A⊕B＝1）」の検算です。CNOTを2個使って、D に A⊕B を書き込む回路を作ってください（制御A→標的D、制御B→標的D）。A・Bは変化させないこと。",
-    qlink: "条件式を回路に翻訳するとき、「⊕（XOR）」はCNOTの足し込みそのものです。重要なのは、この回路を組む工程で「条件を満たす候補の一覧」を一切使っていないこと。式を配線に写しただけで、どの候補が合格かは回路が実行時に自分で判定します。オラクルが答えを知らずに作れる理由が、ここにあります。",
-    qubits: 3, labels: ["A","B","D"], gates: ["X","CNOT"],
-    mode: "unitary", testInputs: [0, 2, 4, 6],
-    targetMap: i => i | (((i >> 2) ^ (i >> 1)) & 1),
+    name: "拡散：印を確率に変える",
+    label: "LEVEL 2", shortName: "拡散",
+    desc: "オラクルまでは配置済みです。その後ろに拡散回路を、この順番で全部つないでください：H×3 → X×3 → CCZ → X×3 → H×3（X×3・H×3 は A・B・C の3本の線に1個ずつ）。完成すると |101⟩ の矢印だけ長さ0.88（確率78%）に育ちます。矢印は全部左向きになりますが、表全体の向きに意味はありません。",
+    qlink: "拡散は「すべての矢印を平均のまわりで折り返す」操作で、正体は「|000⟩だけ位相反転」をH×3で挟んだものです。真ん中の X×3→CCZ→X×3 が「000のときだけ反転」を作る——オラクルと同じ構造です。1反復で鍵の確率は 1/8 → 78% に育ちます。なお、この組み方では表全体の符号が反転しますが、全体の向き（グローバル位相）は測定に一切影響しないため、問題ありません。",
+    qubits: 3, labels: ["A","B","C"], gates: ["H","X","CCZ"],
+    canvasW: 1160,
+    mode: "state", target: T14,
     dialogue: [
-      { who:'cat', img:'cat', text:'次の条件は「AとBが違う」。式で書くと A⊕B＝1 だね。DにA⊕Bを書き込む検算を、CNOT2個で組んでごらん。' },
-      { who:'rabbit', img:'rabbitThink', text:'Dは0から始まるから、CNOTでAを足し込んで、続けてBを足し込めば D＝A⊕B。量子回路クエストで半加算器のSUMを作ったのと同じ手ですね。' },
-      { who:'cat', img:'catThink', text:'そう。そしてここが大事なところだよ。いま君は、この条件を満たす候補がどれかを<strong>一度も考えていない</strong>。条件の式を、そのまま配線に翻訳しただけだね。' },
-      { who:'rabbit', img:'rabbit', text:'言われてみれば……答えの一覧を知らなくても、式さえあれば検算回路は組めるんですね。' },
+      { who:'cat', img:'cat', text:'見えない印を確率に変える番だよ。使うのは<strong>拡散</strong>——すべての矢印を「平均のまわりで折り返す」操作。旅では一覧表の計算で追いかけたね。' },
+      { who:'rabbit', img:'rabbitThink', text:'平均折り返しなら、マイナス側にある鍵の矢印だけが反対へ大きく振れて、長く育つんでしたね。でも「平均で折り返す回路」を、HとXとCCZだけでどう組むんでしょう。' },
+      { who:'cat', img:'catThink', text:'拡散の正体は、<strong>「|000⟩だけ位相反転」をH×3で挟んだもの</strong>なんだ。順番に H×3 → X×3 → CCZ → X×3 → H×3。真ん中のX×3とCCZは「000のときだけ反転」——さっきのオラクルと同じ手だよ。' },
+      { who:'rabbit', img:'rabbit', text:'拡散もオラクルと同じ部品でできているんですね。オラクルの続きにつないでみます。' },
+      { who:'cat', img:'cat', text:'うまく組めると、|101⟩の矢印だけ長さ0.88——確率78%まで育つよ。矢印が全部左向きに変わるけれど、表全体の向きには意味がない。長さを見てごらん。' },
     ],
-    solution: [ {t:'CNOT', q:[0,2], c:1}, {t:'CNOT', q:[1,2], c:2} ],
+    preset: GV_L13,
+    solution: GV_L14,
   },
   {
-    name: "かつの検算：AもBも1",
-    label: "LEVEL 3", shortName: "AND検算",
-    desc: "条件「AもBも1」の検算です。トフォリを1個つないで（●●＝AとBの線に、⊕＝Dの線に）、両方が1のときだけDが反転する回路を作ってください。",
-    qlink: "「かつ（AND）」はトフォリで検算できます。⊕（CNOT）と、かつ（トフォリ）と、NOT（X）が揃えば、どんな論理式でも検算回路に翻訳できます——論理回路CPUクエストで見た「基本ゲートの万能性」と同じ話です。実際のAES鍵探索のオラクルも、暗号化の全手順をこの調子で可逆論理に翻訳したものです。",
-    qubits: 3, labels: ["A","B","D"], gates: ["X","CNOT","CCX"],
-    mode: "unitary", testInputs: [0, 2, 4, 6],
-    targetMap: i => i | (((i >> 2) & (i >> 1)) & 1),
+    name: "グローバー完成：94.5%で鍵を当てる",
+    label: "LEVEL 3", shortName: "グローバー",
+    desc: "1反復目までは配置済みです。その後ろに2反復目を、この順番でつないでください：オラクル（X → CCZ → X、XはBの線）→ 拡散（H×3 → X×3 → CCZ → X×3 → H×3）。完成すると |101⟩ が長さ0.97（確率94.5%）になります。仕上げに測定で鍵を引き当てましょう。",
+    qlink: "最適な反復回数はおよそ (π/4)√N 回。8候補なら2回で94.5%に達します。回し過ぎると折り返しで逆に確率が下がります（3反復目を組んで確かめられます）。古典では平均4.5回・最悪8回の試行が必要なところ、グローバーは√N 回程度——2次加速です。何でも一瞬で解けるわけではない、という距離感まで含めて、これが量子探索の実力です。",
+    qubits: 3, labels: ["A","B","C"], gates: ["H","X","CCZ"],
+    canvasW: 1960,
+    mode: "state", target: T15,
     dialogue: [
-      { who:'cat', img:'cat', text:'条件「AもBも1」。これはもう道具を持っているね。' },
-      { who:'rabbit', img:'rabbit', text:'トフォリです。制御をAとB、標的をDにすれば、両方が1のときだけDが反転します。' },
-      { who:'cat', img:'catThink', text:'そう。CNOTが「⊕」の検算、トフォリが「かつ」の検算。Xも合わせれば、論理回路の旅でやったのと同じ理屈で、どんな条件式でも検算に翻訳できるんだ。' },
+      { who:'rabbit', img:'rabbit', text:'78%まで来ました。もう一押ししたいです。' },
+      { who:'cat', img:'cat', text:'同じ一手をもう1回だよ。オラクルで印をつけ直して、拡散で折り返す。これで|101⟩は0.97、確率94.5%になる。組み上げたら、測定で鍵を引き当ててごらん。' },
+      { who:'rabbit', img:'rabbitThink', text:'古典なら最悪8回、平均でも4回以上は試すところを、オラクル2回と測定1回でほぼ確実……重ね合わせと干渉が本当に仕事をしているんですね。' },
+      { who:'cat', img:'catThink', text:'そう。そして候補が増えても、必要な反復はおよそ√N回で済む。仕組みは、いま君が組んだこの回路と同じだよ。' },
     ],
-    solution: [ {t:'CCX', q:[0,1,2], c:1} ],
-  },
-  {
-    name: "一致検算：鍵101を判定する",
-    label: "LEVEL 4", shortName: "一致検算",
-    desc: "候補ABCが鍵101と一致するかの検算です。新部品CCCX（制御3個の⊕。3つ全部が1のときだけ標的を反転）を使い、X（Bの線）→ CCCX（制御＝A・B・C、標的＝D）→ X（Bの線）とつないで、「ABC＝101のときだけDが1になる」回路を作ってください。",
-    qlink: "多重制御X（ここでは制御3個のCCCX）は「全部1なら反転」。鍵の0の桁を先にXで裏返しておく手は、量子回路クエストのオラクルと同じです。この検算はどの候補に対しても同じ回路が走る「固定の判定回路」であり、比較用の鍵をどこかに保存して照合しているわけではありません。ここでは鍵を知る出題者として組んでいますが、レベル7で「答えを知らない条件」からも同じ形が組めることを確かめます。",
-    qubits: 4, labels: ["A","B","C","D"], gates: ["X","CNOT","CCX","CCCX"],
-    canvasW: 680,
-    mode: "unitary", testInputs: [0, 2, 4, 6, 8, 10, 12, 14],
-    targetMap: i => i === 10 ? 11 : i,
-    dialogue: [
-      { who:'cat', img:'cat', text:'では本題、「候補ABCが鍵101と一致するか」の検算だよ。新しい部品は<strong>CCCX</strong>——制御が3個になったトフォリで、3つ全部が1のときだけ標的を反転する。' },
-      { who:'rabbit', img:'rabbitThink', text:'101は真ん中が0だから、そのままだと111しか拾えません。量子回路クエストのオラクルと同じ手で、Bを先にXで裏返しておいて、CCCXのあとに戻せば……一致したときだけDが1になります。' },
-      { who:'cat', img:'cat', text:'そう。8通りの候補すべてで、Dが1になるのは101だけ——それを確かめてごらん。' },
-      { who:'rabbit', img:'rabbit', text:'これが、封印オラクルの中で走っていた検算の正体なんですね。' },
-    ],
-    solution: OW_CHECK101(1),
-  },
-  {
-    name: "印つけ：DにZ",
-    label: "LEVEL 5", shortName: "印つけ",
-    desc: "印つけの工程です。A・B・Cに H を1個ずつ → レベル4の一致検算（X→CCCX→X）→ D に Z、の順につないでください。鍵の枝だけ矢印が反転しますが、その枝は D＝1 の行に残ります（後片付けは次のレベルで）。",
-    qlink: "Zは|1⟩側の矢印だけを反転するので、判定ビットDにかければ「検算に合格した枝」だけに印がつきます。どの枝が合格かを知らなくても、検算の結果が印の場所を自動的に決めてくれるのです。ただしこのままでは、鍵の枝だけDの値が違う＝どの枝か区別できる「手がかり」が残った状態です。手がかりが残った道筋どうしは干渉できない（デコヒーレンスと同じ仕組み）ため、印を干渉で活かすには後片付けが必要になります。",
-    qubits: 4, labels: ["A","B","C","D"], gates: ["H","X","Z","CCCX"],
-    canvasW: 780,
-    mode: "state", target: T5,
-    dialogue: [
-      { who:'cat', img:'cat', text:'検算ができたから、印をつけよう。H×3で8候補の重ね合わせを作り、いまの検算をつないで、最後に<strong>DにZ</strong>をかける。' },
-      { who:'rabbit', img:'rabbitThink', text:'検算で「一致した枝」だけD＝1になっているから、ZはD＝1の行の矢印だけを反転する。つまり鍵の枝にだけ印がつく、ということですか？' },
-      { who:'cat', img:'catThink', text:'その通り。ただし、できあがった一覧表をよく見てほしい。印はついたけれど、鍵の枝だけがD＝1の行に居座ったままだね。' },
-      { who:'rabbit', img:'rabbit', text:'Dに検算の結果が残っています……。「<a href="https://ruglerugle.github.io/decoherence-quest/" target="_blank" rel="noopener">消える干渉縞</a>」で学んだ手がかりと同じで、枝ごとにDの値が違うままだと、あとで干渉できなくなる気がします。' },
-      { who:'cat', img:'cat', text:'いいところに気づいたね。その後片付けが、次の工程だよ。' },
-    ],
-    solution: OW_L5,
-  },
-  {
-    name: "逆計算：借りたDを返す",
-    label: "LEVEL 6", shortName: "逆計算",
-    desc: "検算＋Zまでは配置済みです。後片付け＝逆計算をします：検算回路を逆の順番（X→CCCX→X。左右対称なので同じ並びです）でもう一度つないで、すべての枝で D を 0 に戻してください。完成すると、ABC側に |101⟩ の印だけが残った「オラクルの完成形」になります。",
-    qlink: "可逆なゲートは、逆順に通せば必ず元に戻ります（逆計算・アンコンピュート）。検算 → DにZ → 逆計算の3工程で、補助ビットは「借りて、使って、返す」。返した後のDはどの枝でも0なので手がかりは消え、ABC側には位相の印だけが残ります。外から見ると、X・CCZ・Xで直接組んだ位相オラクルと同じ動き——これが、どんな条件にも通用するオラクルの標準的な作り方です。",
-    qubits: 4, labels: ["A","B","C","D"], gates: ["H","X","Z","CCCX"],
-    canvasW: 1080,
-    mode: "state", target: T6,
-    preset: OW_L5,
-    dialogue: [
-      { who:'cat', img:'cat', text:'後片付けの方法は<strong>逆計算</strong>——検算回路を、逆の順番でもう一度通すことだよ。量子ゲートはすべて可逆だから、必ず元に戻せる。' },
-      { who:'rabbit', img:'rabbitThink', text:'X→CCCX→Xを逆順に……この検算は左右対称だから、同じ並びをもう一度つなげばいいんですね。どの枝でもDは0に戻って、矢印の反転だけがABC側に残る。' },
-      { who:'cat', img:'catThink', text:'そう。<strong>検算 → DにZ → 逆計算</strong>。この3工程がオラクルの完成形だよ。外から見ると、量子回路クエストでX・CCZ・Xを使って直接組んだ位相の印つけと、同じ動きになっている。' },
-      { who:'rabbit', img:'rabbit', text:'補助ビットは、借りて、使って、返す。返すところまでがオラクルなんですね。' },
-    ],
-    solution: OW_L6,
+    preset: GV_L14,
+    solution: GV_L15,
   },
   {
     name: "条件からオラクルを作る",
-    label: "LEVEL 7", shortName: "条件オラクル",
+    label: "LEVEL 4", shortName: "条件オラクル",
     desc: "答えを知らない条件からオラクルを作ります。条件は「隣り合う桁が必ず違う」（A⊕B＝1 かつ B⊕C＝1）。手順：H×3 → CNOT（制御B→標的A）→ CNOT（制御C→標的B）→ トフォリ（制御＝AとB、標的＝D）→ D に Z → いまの3個を逆順（トフォリ → CNOT(C→B) → CNOT(B→A)）。条件を満たす候補がどれかは、考えなくても組めます。",
     qlink: "この回路の設計者は、条件「隣り合う桁が違う」を満たす候補がどれかを一度も計算していません。それでも印は010と101に落ちます（一覧表で確認できます）。補助ビットが足りないときは、候補レジスタ自体を一時的に書き換えて作業場所にし、逆計算で返す——実際の大規模なオラクルでも常套手段です。「まだ使う値を上書きしない」のではなく「上書きしても必ず返す」へ、可逆設計が一段進んだ形です。",
     qubits: 4, labels: ["A","B","C","D"], gates: ["H","X","Z","CNOT","CCX","CCCX"],
     canvasW: 1080,
     mode: "state", target: T7,
     dialogue: [
-      { who:'cat', img:'cat', text:'仕上げに、<strong>答えを考えずに</strong>オラクルを作ってみよう。条件は「隣り合う桁が必ず違う」——A⊕B＝1 かつ B⊕C＝1 だよ。' },
+      { who:'cat', img:'cat', text:'今度は、<strong>答えを考えずに</strong>オラクルを作ってみよう。量子回路クエストの最後に組んだ「検算 → DにZ → 逆計算」の3工程を使う。条件は「隣り合う桁が必ず違う」——A⊕B＝1 かつ B⊕C＝1 だよ。' },
       { who:'rabbit', img:'rabbitThink', text:'「かつ」だからトフォリでDに書きたいですが、その前に A⊕B と B⊕C を置く場所が要ります。補助ビットはD1個しかありません。' },
       { who:'cat', img:'catThink', text:'そこで一工夫だよ。CNOT(B→A)でAの場所を一時的にA⊕Bに、CNOT(C→B)でBの場所をB⊕Cに書き換えてしまう。トフォリでDに「かつ」を書いたら、Zのあと、いまの3個を逆順に通して全部返せばいい。' },
       { who:'rabbit', img:'rabbit', text:'候補の置き場所そのものを作業メモに使うんですね。逆計算で返すから、書き換えても大丈夫……。組んでみます。' },
@@ -675,7 +692,7 @@ const LEVELS = [
   },
   {
     name: "グローバー接続：1反復で100%",
-    label: "LEVEL 8", shortName: "接続",
+    label: "LEVEL 5", shortName: "接続",
     desc: "オラクルまでは配置済みです。その後ろに、A・B・Cへの拡散 H×3 → X×3 → CCZ → X×3 → H×3 をつないでください（Dには何もしません）。答えが8候補中2つあるこの問題では、1反復だけで確率が100%になります。完成したら測定を何度か試してみましょう。",
     qlink: "答えがM個あるとき、最適な反復回数はおよそ (π/4)√(N/M) 回。N=8・M=2 ではちょうど1反復で確率100%になります（答えが多いほど見つけやすい）。測定すると010か101のどちらかが毎回出ますが、どちらが出るかはランダムです。答えを列挙せず、条件だけから組んだ回路が、答えだけを確実に差し出す——これが「オラクル＝条件を回路にコンパイルしたもの」という意味です。",
     qubits: 4, labels: ["A","B","C","D"], gates: ["H","X","Z","CNOT","CCX","CCZ","CCCX"],
@@ -692,8 +709,27 @@ const LEVELS = [
     solution: OW_L8,
   },
   {
+    name: "覆面オラクル：知らない鍵を探す",
+    label: "LEVEL 6", shortName: "覆面オラクル",
+    desc: "オラクルの中身が見えなくなりました。？オラクルは「隠された鍵（3桁の0/1）と一致した候補の矢印だけを反転する」封印済みの判定回路で、鍵はランダムに決まっています（あなたにも見えません）。H×3 → ？オラクル → 拡散 → ？オラクル → 拡散 と組んで、隠れた鍵の確率を90%以上に育ててください。？オラクルは3本の線を上から順（A・B・C）につなぎます。先に測定で鍵を予想してから、検証で答え合わせをしましょう。",
+    qlink: "これが本来のグローバーの姿です。鍵に依存する部品は封印されたオラクル（検算箱）だけで、H×3も拡散も鍵と無関係——だから鍵を知らない人でも回路全体を組めます。封印オラクルの中身は、レベル4で組んだとおり「鍵から」ではなく「条件（検算の手順）から」作れます。①候補が条件を満たすかの検算を、量子回路クエストで組んだ判定ビット・トフォリ・CNOT・X（可逆論理）で組んで補助ビットに書き込む ②補助ビットにZで印をつける ③逆計算で補助ビットを返す。この3工程は、暗号化の手順が公開されていれば鍵を知らなくても組めます。",
+    qubits: 3, labels: ["A","B","C"], gates: ["H","X","CCZ","ORACLE"],
+    canvasW: 1580,
+    mode: "mystery",
+    goalHTML: "：封印オラクルの隠れた鍵について、その答え候補の確率を<strong>90%以上</strong>に育てること。「▶ 検証する」で鍵の発表と答え合わせをします。回路を組み直すたびに鍵はランダムに変わりますが、同じ形の回路のままで通用するはずです。",
+    dialogue: [
+      { who:'rabbit', img:'rabbitThink', text:'博士、整理させてください。レベル1〜3では鍵が101だと知っていてオラクルを組み、レベル4では答えを知らない条件から組みました。本物の鍵探索では、組む人はどこまで知っているんでしょうか。' },
+      { who:'cat', img:'cat', text:'いい整理だね。鍵になるのは、オラクルが「鍵を知っている箱」ではなく「候補を検算できる箱」だという点だよ。レベル4で組んだのがまさにそれで、攻撃者は平文と暗号文のペアを持っていて、「候補の鍵で暗号化して一致するかを調べる回路」は、鍵を知らなくても組める。' },
+      { who:'rabbit', img:'rabbit', text:'はい。暗号化の手順は公開されているから、判定回路そのものは誰でも作れる。作った本人も、どの候補で一致が出るかは知らないんでしたね。' },
+      { who:'cat', img:'catThink', text:'そう。そしてもう1つ気づいてほしい。レベル2で組んだ<strong>拡散回路は、鍵に全く依存しない</strong>。鍵の情報が入っているのはオラクルだけなんだ。そこで今回は、中身を封印した「？オラクル」を渡すよ。鍵はランダムに決まっていて、私も君も知らない。' },
+      { who:'rabbit', img:'rabbitThink', text:'知らない鍵を、H×3と拡散——鍵と無関係な部品だけ——で挟んで、あぶり出せるかどうか、ということですね。' },
+      { who:'cat', img:'cat', text:'そう。組み上げたら、先に測定で鍵を予想してから答え合わせをしてごらん。鍵を取り替えても、回路は同じ形のままで通用するはずだよ。' },
+    ],
+    solution: GV_L16,
+  },
+  {
     name: "ミニ暗号：暗号文に合わせてオラクルを組む",
-    label: "LEVEL 9", shortName: "ミニ暗号",
+    label: "LEVEL 7", shortName: "ミニ暗号",
     desc: "おもちゃの暗号を定義します：暗号文 C ＝「平文Pに鍵K（2桁）を⊕して、かき混ぜS（2進で＋1：CNOT(K0→K1)→X(K0)）を1回かけたもの」。平文は P=10 で固定、暗号文 C は下のボタンで選べます。選んだ C を検算するオラクルを組んでください。手順：H×2（K1・K0）→ ⊕P（Pの1の桁＝K1にX）→ かき混ぜS（CNOT(K0→K1)→X(K0)）→ 一致判定（Cの0の桁をXで挟み、トフォリ(K1,K0→D)）→ DにZ → 一致判定と暗号化を逆順にすべて戻す。Cに依存するのは一致判定の「Xで挟む線」だけ——Cの0の桁の線を挟みます。",
     qlink: "本物の暗号（AESなど）も「鍵を⊕する → かき混ぜる（S-box）」の繰り返しでできており、このミニ暗号はその1往復だけを取り出したものです。検算オラクルの作り方は同じ：①暗号化の手順を可逆論理で書く ②既知の暗号文とX挟み＋多重制御で比較してDへ ③DにZ ④全部逆走。材料は公開の暗号化手順と手元のP・Cだけで、鍵はどこにも使っていません。<br><br>暗号文Cを変えても、回路の大部分（H・⊕P・かき混ぜS・Z・逆計算）は同じままで、変わるのは<strong>一致判定でXを挟む線の位置だけ</strong>です（Cの0の桁の線を挟む）。このミニ暗号のかき混ぜSは 00→01→10→11→00 の巡回なので、C＝01なら鍵10、C＝10なら鍵11、C＝11なら鍵00、C＝00なら鍵01が検算に合格します。Cを選んで組み、印がつく鍵が一覧表で切り替わることを確かめてください。",
     qubits: 3, labels: ["K1","K0","D"], gates: ["H","X","Z","CNOT","CCX"],
@@ -704,14 +740,14 @@ const LEVELS = [
     dialogue: [
       { who:'rabbit', img:'rabbitThink', text:'「隣どうしが違う」のような条件だけでなく、本物の暗号みたいに「平文と暗号文から鍵を探す」オラクルも組めるんでしょうか。' },
       { who:'cat', img:'cat', text:'組めるよ。おもちゃの暗号をひとつ定義しよう。鍵Kは2桁。暗号化は「平文Pに鍵を⊕して、かき混ぜSを1回かける」——Sは2進で＋1する回路だ。平文はP=10で固定、暗号文Cは君が選んでいい。' },
-      { who:'rabbit', img:'rabbit', text:'検算は「候補KをPに⊕して、Sをかけて、選んだCと比べる」……比べた結果をDに書くんですね。作業用のレジスタがないので、レベル7と同じように候補K自身を書き換えて、あとで逆計算で返します。' },
+      { who:'rabbit', img:'rabbit', text:'検算は「候補KをPに⊕して、Sをかけて、選んだCと比べる」……比べた結果をDに書くんですね。作業用のレジスタがないので、レベル4と同じように候補K自身を書き換えて、あとで逆計算で返します。' },
       { who:'cat', img:'catThink', text:'そう。⊕Pは「Pの1の桁にX」、Sは「CNOTとX」、一致判定は「Cの0の桁をXで挟んでトフォリ」。Cを変えたとき、回路のどこが変わるか——それを自分の手で確かめてほしいんだ。' },
       { who:'rabbit', img:'rabbitThink', text:'⊕Pも、かき混ぜSも、Zも変わらない……変わるのは一致判定でXを挟む線だけ、ですか。Cの0の桁が動けば、挟む場所も動く。組んでみます。' },
     ],
   },
   {
     name: "鍵の一本釣り：4候補・1反復・100%",
-    label: "LEVEL 10", shortName: "鍵の一本釣り",
+    label: "LEVEL 8", shortName: "鍵の一本釣り", matrix: "CZ",
     desc: "ミニ暗号のオラクルまでは配置済みです。その後ろに、Kレジスタへの拡散 H×2 → X×2 → CZ → X×2 → H×2 をつないでください（CZは制御Z：両方が1のときだけ矢印を反転する2量子ビット版。Dには何もしません）。4候補・答え1つのこの問題では、1反復で確率100%になります。完成したら測定で鍵を取り出しましょう。",
     qlink: "N=4・M=1は、1反復でちょうど確率100%になる特別な場合です（一般には (π/4)√N 回で100%弱）。古典なら平均2〜3回は暗号化を試すところを、量子は重ね合わせへの検算1回＋拡散で言い当てます。取り出した鍵が本物かどうかは、手元の平文を暗号化してみれば古典計算で確かめられます——「見つけるのは大変、確かめるのは簡単」という、グローバーが得意な問題の形そのものです。",
     qubits: 3, labels: ["K1","K0","D"], gates: ["H","X","Z","CNOT","CCX","CZ"],
@@ -729,8 +765,8 @@ const LEVELS = [
   },
   {
     name: "オラクル10ビット版：鍵に印がつく瞬間",
-    label: "LEVEL 11", shortName: "10ビット印つけ",
-    desc: "レベル9のオラクルを10ビット鍵に拡大した実回路です（グローバーの反復に入る前の、印つけまで）。K9〜K0とDの11本に、H×10 → ⊕P → かき混ぜS → 暗号文Cとの一致判定（X挟み＋MCX）→ DにZ → 全逆計算、の約75ゲートが配線済み。「▶ 回路に通す」で一様な重ね合わせにオラクルを1回かけ、1024本の矢印のうち隠れた鍵の1本だけが左向き（赤）になることを確かめてください。「✓ 印を答え合わせ」でクリア判定。もう一度通すと印が消えることも試せます。",
+    label: "LEVEL 9", shortName: "10ビット印つけ",
+    desc: "レベル7のオラクルを10ビット鍵に拡大した実回路です（グローバーの反復に入る前の、印つけまで）。K9〜K0とDの11本に、H×10 → ⊕P → かき混ぜS → 暗号文Cとの一致判定（X挟み＋MCX）→ DにZ → 全逆計算、の約75ゲートが配線済み。「▶ 回路に通す」で一様な重ね合わせにオラクルを1回かけ、1024本の矢印のうち隠れた鍵の1本だけが左向き（赤）になることを確かめてください。「✓ 印を答え合わせ」でクリア判定。もう一度通すと印が消えることも試せます。",
     qlink: "1024候補への「⊕P → かき混ぜ → 比較」が、重ね合わせのすべての枝で同時に走り、検算に合格した1本にだけ位相の印が落ちます——鍵を誰も計算していないのに。ただし全候補の矢印の長さは1/32（確率0.1%）のままで、測定してもこの印は見えません。見えない印を確率に変えるのが、次のレベルでつなぐ拡散です。なお、オラクルを偶数回通すと反転の反転で印は消えます。",
     qubits: 11, labels: ["K9","K8","K7","K6","K5","K4","K3","K2","K1","K0","D"],
     gates: [],
@@ -740,7 +776,7 @@ const LEVELS = [
     goalHTML: "：オラクルを1回通し、<strong>隠れた鍵の1本だけが左向き（−）になった一覧表</strong>を作って「✓ 印を答え合わせ」で確認すること。長さは全候補同じまま＝測定では印が見えないことも確かめましょう。",
     dialogue: [
       { who:'rabbit', img:'rabbitThink', text:'ミニ暗号のオラクルを、10ビットでも見てみたいです。拡散をつなぐ前の、印がつくところまでを。' },
-      { who:'cat', img:'cat', text:'いいね。レベル9と同じオラクル——⊕P、かき混ぜS、Cとの一致判定、DにZ、逆計算——を10ビット幅で配線しておいたよ。約75ゲートだ。' },
+      { who:'cat', img:'cat', text:'いいね。レベル7と同じオラクル——⊕P、かき混ぜS、Cとの一致判定、DにZ、逆計算——を10ビット幅で配線しておいたよ。約75ゲートだ。' },
       { who:'rabbit', img:'rabbit', text:'1024本の矢印すべてで、検算が同時に走るんですね。' },
       { who:'cat', img:'catThink', text:'そう。通してみて、左向きになった矢印を探してごらん。それが、誰も計算していない鍵の居場所だよ。長さは全部同じままだから、測定では見えないことも確かめられるね。' },
     ],
@@ -748,7 +784,7 @@ const LEVELS = [
   },
   {
     name: "10ビットの鍵探索：√Nを体感する",
-    label: "LEVEL 12", shortName: "10ビット探索",
+    label: "LEVEL 10", shortName: "10ビット探索",
     desc: "ミニ暗号を10ビット鍵に拡大した本物の回路です。K9〜K0の10本と補助ビットDに、H×10 → オラクル（⊕P → かき混ぜS → 暗号文Cとの一致判定 → DにZ → すべて逆計算）→ 拡散、の1反復分・約100ゲートが配線済みです。かき混ぜSは「上の桁から順に K_i ⊕= K_(i-1)、最後にK0を反転」。暗号文Cは隠し鍵から作られていますが、回路は公開データのPとCだけから組まれています。「▶ 回路に1反復通す」で状態を回路に通し、矢印グラフが育ったら（最適は約25反復）測定で鍵を言い当ててください（一致でクリア）。回しすぎるとどうなるかも試せます。",
     qlink: "10ビット（1024候補）では約25反復で確率99.9%——反復回数が√Nに比例することを体感できます。実機でも同じで、この回路を25回繰り返しかけます（ここでは同じ回路に状態を通し直しています）。ではAESの128ビットでは？　候補は2の128乗≈3.4×10³⁸通り。このゲームの方式（古典シミュレーション）で矢印の一覧表を持つには約10²⁷テラバイトが必要で、地球上の全ストレージでも遠く及びません——一覧表を「状態」としてそのまま持てる量子ビットの存在意義がここにあります。ただし量子実機でも反復は (π/4)√(2¹²⁸) ≈ 1.4×10¹⁹回。1マイクロ秒に1反復でも約46万年かかり、誤り訂正済みの論理量子ビットが数千個（物理量子ビットでは数百万個規模）必要です。つまりグローバーはAES-128を実質64ビット相当に弱めるものの実用的な攻撃には程遠く、AES-256などへの移行で備えられます。それでも回路の工程は、このゲームで組んだ「検算→DにZ→逆計算＋拡散」のまま変わりません。",
     qubits: 11, labels: ["K9","K8","K7","K6","K5","K4","K3","K2","K1","K0","D"],
@@ -768,7 +804,7 @@ const LEVELS = [
   },
   {
     name: "本物志向の暗号：逆算できない鍵探し",
-    label: "LEVEL 13", shortName: "非線形暗号",
+    label: "LEVEL 11", shortName: "非線形暗号",
     desc: "これまでのミニ暗号は Enc(K)=S(K⊕P) で、鍵は K＝S⁻¹(C)⊕P と公式で逆算できました（試す必要がない）。実際の暗号のように「逆算の公式がない」ようにするには、非線形なS-box（＋2桁の値では作れないので3ビットのブロック）と複数ラウンドが要ります。この回路は、鍵2ビット・ブロック3ビット・非線形S層・3ラウンドのミニ暗号のオラクルを配線済みにしたものです。平文P=101と暗号文C=001だけから組まれていて、合格する鍵（この暗号でP→Cになる唯一の鍵）は組んだ結果として回路が選びます。「▶ 検証する」で、鍵01だけに印（−0.5）がつくことを確かめてください。補助ビット（B2B1B0・D）はすべて0に戻ります。",
     qlink: "なぜ2ビットでは「逆算できない暗号」が作れないのか——2ビットの値の並べ替えは全部で24通りで、その<strong>すべてがアフィン写像（線形＋定数）</strong>になってしまうからです。アフィンな暗号は鍵についての連立1次方程式になり、公式で一発で解けます（試す必要がない）。非線形性は3ビット以上のS-boxで初めて生まれ、複数ラウンドと組み合わせると鍵を公式で分離できなくなり、<strong>本当に鍵を試すしかなくなります</strong>。この回路の暗号は非線形なので、K＝公式(P,C) が書けず、4つの鍵を実際に暗号化して比べるしかありません——それでもオラクルの作り方は今までと完全に同じ：ブロックをPに初期化 → 鍵で暗号化を前向きに計算 → 暗号文Cと一致判定 → DにZ → すべて逆計算。暗号を一度も逆に回していません。AESもS-boxと鍵混合を何ラウンドも重ねただけで、原理はこの回路と同じです。",
     qubits: 6, labels: ["K1","K0","B2","B1","B0","D"], gates: ["H","X","Z","CNOT","CCX","CCCX"],
@@ -789,7 +825,7 @@ const LEVELS = [
   },
   {
     name: "ショアのアルゴリズム：15を素因数分解する",
-    label: "LEVEL 14", shortName: "ショア",
+    label: "LEVEL 12", shortName: "ショア",
     desc: "グローバーとは別系統の量子アルゴリズム——ショアの素因数分解の実回路です。15を割るには「7を何回かけると余りが1に戻るか（＝7の位数r）」を求めれば十分で、これは掛け算の周期を探す問題です。数え上げレジスタ3本（q0〜q2）と作業レジスタ4本（q3〜q6）に、H×3 → 作業を|1⟩に → 制御付き「×7 mod15」を重み分（1回・2回・4回）→ 逆QFT、の約60ゲートが配線済み。「▶ 回路を通して測定」で数え上げレジスタを測ると、0・2・4・6が等確率で出ます。「✓ 周期を求めて素因数分解」で m/8 の連分数から周期r=4を割り出し、15=3×5へ。",
     qlink: "グローバーが「総当たりを√Nに縮める探索」なら、ショアは「周期（位数）を一発で見抜く」まったく別の道具です。鍵は<strong>逆QFT（量子フーリエ変換の逆）</strong>——数え上げレジスタが Σ_x |x⟩|7ˣ mod15⟩ という「xについて周期rで繰り返す状態」になっているとき、逆QFTはその周期を、測定値が r の倍数間隔（ここでは 8/r=2 の倍数＝0,2,4,6）に山を作る形へ変換します。測定値 m から m/8 を連分数展開すると分母に周期rが現れ（2/8=1/4→r=4、6/8=3/4→r=4）、rが偶数なら gcd(7^{r/2}±1, 15)=gcd(48,15)=3・gcd(50,15)=5 と<strong>古典計算だけで</strong>約数が出ます。<br><br>この回路の「×7 mod15」は、N=15 が 2⁴−1 という特殊な数なので SWAP（線の入れ替え）とX だけで作れています。逆QFTの R₂†・R₃† は −π/2・−π/4 の制御位相回転で、ここで初めて<strong>複素の位相</strong>（矢印の回転）が本質的に効きます。RSA暗号を破るような大きなNでは、この「掛け算の周期を量子で求める」部分だけが指数的に速く、残りは連分数などの古典計算です。ただし実用規模には誤り訂正済みの論理量子ビットが多数必要で、まだ実現していません。",
     qubits: 7, labels: ["q0","q1","q2","q3","q4","q5","q6"], gates: [],
@@ -807,12 +843,12 @@ const LEVELS = [
       { who:'cat', img:'cat', text:'0・2・4・6が等確率で出る。たとえば6が出たら 6/8=3/4、その分母4が周期だ。周期4は偶数だから gcd(7²−1,15)=gcd(48,15)=3、gcd(7²+1,15)=gcd(50,15)=5——15=3×5。通して、測って、素因数分解までやってごらん。' },
       { who:'rabbit', img:'rabbit', text:'「×7 mod15」がSWAPとXだけで組めているのも面白いです。周期を見抜く逆QFTが、量子コンピュータが古典より速く素因数分解できる正体なんですね。' },
     ],
-  },
+  }
 ];
 
 // ====================== 状態 ======================
 let currentLevelIdx = 0;
-let cleared = JSON.parse(localStorage.getItem("oracle_workshop_cleared") || "[]");
+let cleared = JSON.parse(localStorage.getItem("oracle_workshop_v2_cleared") || "[]");
 let nodes = [], pins = [], wires = [];
 let idc = 1;
 let dragNode = null, dragOffset = {x:0,y:0}, dragMoved = false;
@@ -877,7 +913,7 @@ function updateCipherHint(){
 
 function loadLevel(idx){
   if (idx !== undefined) currentLevelIdx = idx;
-  localStorage.setItem('oracle_workshop_level', currentLevelIdx);
+  localStorage.setItem('oracle_workshop_v2_level', currentLevelIdx);
   document.getElementById('clear-screen').style.display = 'none';
   const lv = LV(), total = LEVELS.length;
 
@@ -895,6 +931,7 @@ function loadLevel(idx){
   document.getElementById('dialog-scene').innerHTML = renderDialogue(lv.dialogue);
   document.getElementById('q-link-area').innerHTML = lv.qlink
     ? `<div class="q-link-box">⚛ <strong>量子コンピュータとのつながり</strong><br>${lv.qlink}</div>` : '';
+  document.getElementById('gate-matrix-area').innerHTML = lv.matrix ? gateMatrixHTML(lv.matrix) : '';
 
   buildLevelList();
   document.getElementById('verifyTable').innerHTML = '';
@@ -1878,7 +1915,7 @@ document.getElementById('measureBtn').addEventListener('click', () => {
     if (ok){
       if (!cleared.includes(currentLevelIdx)){
         cleared.push(currentLevelIdx);
-        localStorage.setItem('oracle_workshop_cleared', JSON.stringify(cleared));
+        localStorage.setItem('oracle_workshop_v2_cleared', JSON.stringify(cleared));
         buildLevelList();
       }
       showNextBtn();
@@ -1975,7 +2012,7 @@ document.getElementById('runBtn').addEventListener('click', () => {
 
   if (allPass && !cleared.includes(currentLevelIdx)){
     cleared.push(currentLevelIdx);
-    localStorage.setItem('oracle_workshop_cleared', JSON.stringify(cleared));
+    localStorage.setItem('oracle_workshop_v2_cleared', JSON.stringify(cleared));
     buildLevelList();
   }
 });
@@ -2081,12 +2118,12 @@ function renderDialogue(dialogue){
 }
 
 const CLEAR_DIALOGUE_1 = [
-  { who:'cat',    img:'cat',        text:'ここまでの14レベルを並べ直してみよう。' },
-  { who:'rabbit', img:'rabbit',     text:'前半は検算でした。CNOTで⊕、トフォリで「かつ」、X挟みとCCCXで一致判定——条件の成否をDに書く回路たちです。' },
-  { who:'cat',    img:'catThink',   text:'そう。後半はそれをオラクルに仕上げた。DにZで印をつけ、逆計算でDを返す。そして最後は、答えを知らない条件から組んで、グローバーで答えを引き出したね。まとめると——' },
+  { who:'cat',    img:'cat',        text:'ここまでの12レベルを並べ直してみよう。' },
+  { who:'rabbit', img:'rabbit',     text:'前半はグローバーでした。X・CCZ・Xのオラクルと拡散を組んで、8候補から鍵を94.5%で当て、答えを知らない条件からもオラクルを組みました。' },
+  { who:'cat',    img:'catThink',   text:'そう。後半は本物志向だ。封印オラクルで知らない鍵をあぶり出し、ミニ暗号の鍵探索、10ビットの探索で√Nを体感して、最後はショアの周期発見まで行った。まとめると——' },
 ];
 const CLEAR_DIALOGUE_2 = [
-  { who:'rabbit', img:'rabbitThink', text:'量子回路クエストでは、オラクルは鍵を知って組むように見えていました。でも本当は、条件を配線に翻訳しただけで、答えはどこにも書いていなかったんですね。' },
+  { who:'rabbit', img:'rabbitThink', text:'レベル1〜3では、オラクルは鍵を知って組むように見えていました。でも本当は、条件を配線に翻訳しただけで、答えはどこにも書いていなかったんですね。' },
   { who:'cat',    img:'cat',        text:'そう。オラクルは「条件のコンパイル結果」で、答えは条件が勝手に選ぶ。AESの鍵探索のオラクルも、桁違いに大きいだけで、作り方はこの3工程と同じだよ。' },
   { who:'rabbit', img:'rabbit',     text:'検算・印つけ・逆計算……グローバーの心臓部を、部品の1個まで自分の手で組めるようになりました。最後のショアは、探索じゃなくて周期を見抜く別系統でしたね。' },
   { who:'cat',    img:'cat',        text:'そう。グローバーは矢印の向き（＋−）で答えを引き寄せ、ショアは矢印を回す逆QFTで周期を炙り出す。道具は違っても、回路を「配線とゲート」で読む目は同じだよ。' },
@@ -2099,12 +2136,11 @@ function showClearScreen(){
   document.getElementById('app-shell').classList.remove('game-mode');
   document.getElementById('clear-dialog-1').innerHTML = renderDialogue(CLEAR_DIALOGUE_1);
   document.getElementById('clear-flow-box').innerHTML =
-    'CNOT・トフォリ → 条件（⊕・かつ）の検算をDに書く<br>' +
-    'X挟み＋CCCX → 鍵101との一致検算<br>' +
-    'DにZ → 検算に合格した枝だけに印（ただしDに手がかりが残る）<br>' +
-    '逆計算 → Dを借りて、使って、返す＝オラクル完成<br>' +
-    '条件「隣り合う桁が違う」 → 答えを知らずに組んだオラクル<br>' +
+    'H・X・CCZ → オラクル（見えない印）と拡散（平均折り返し）<br>' +
+    '（オラクル→拡散）×2反復 → グローバーの探索：8候補から鍵を94.5%で発見<br>' +
+    '条件「隣り合う桁が違う」 → 答えを知らずに組んだオラクル（検算 → DにZ → 逆計算）<br>' +
     '＋拡散1反復 → 010と101が確率100%で出てくる<br>' +
+    '封印オラクル → 鍵を知らないまま、同じ回路で鍵をあぶり出す<br>' +
     'ミニ暗号（⊕鍵→かき混ぜ） → 平文と暗号文だけから鍵を検算するオラクル<br>' +
     '＋拡散1反復 → 鍵が確率100%で一本釣り（4候補・答え1つ）<br>' +
     '10ビット印つけ → 1024本のうち鍵の1本だけが左を向く（でも測定では見えない）<br>' +
@@ -2190,7 +2226,7 @@ function loopCheckMark(){
       `<strong style="color:#1aa85a">オラクルが印をつけました 🎉</strong><br>ただし長さは全候補0.031のまま（確率は各0.1%）——測定ではこの印は見えません。`;
     if (!cleared.includes(currentLevelIdx)){
       cleared.push(currentLevelIdx);
-      localStorage.setItem('oracle_workshop_cleared', JSON.stringify(cleared));
+      localStorage.setItem('oracle_workshop_v2_cleared', JSON.stringify(cleared));
       buildLevelList();
     }
     showNextBtn();
@@ -2362,7 +2398,7 @@ function shorFactor(){
     + `よって <strong style="color:#1aa85a">15 = ${f1} × ${f2}</strong> 🎉　量子で周期を求め、古典計算で約数を取り出しました。`;
   if (!cleared.includes(currentLevelIdx)){
     cleared.push(currentLevelIdx);
-    localStorage.setItem('oracle_workshop_cleared', JSON.stringify(cleared));
+    localStorage.setItem('oracle_workshop_v2_cleared', JSON.stringify(cleared));
     buildLevelList();
   }
   showNextBtn();
@@ -2416,7 +2452,7 @@ function shorSetCheckpoint(cp){ shorCheckpoint = cp; renderStatePanel(); }
 
 // ====================== 起動 ======================
 // 前回開いていたレベルを復元する（リロードでレベル1に戻らないように）
-const savedLevel = Number(localStorage.getItem('oracle_workshop_level'));
+const savedLevel = Number(localStorage.getItem('oracle_workshop_v2_level'));
 loadLevel(Number.isInteger(savedLevel) && savedLevel >= 0 && savedLevel < LEVELS.length ? savedLevel : 0);
 </script>
 </body>
